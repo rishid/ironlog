@@ -27,7 +27,7 @@ export default defineConfig({
     }),
   ],
   server: {
-    allowedHosts: 'all',
+    allowedHosts: true,
     proxy: {
       '/api': 'http://localhost:8090',
       '/_': 'http://localhost:8090',

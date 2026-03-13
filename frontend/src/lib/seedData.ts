@@ -115,7 +115,7 @@ function pool(
     is_anchor: false,
     is_finisher: false,
     priority: 3,
-    sets_target: 4,
+    sets_target: 3,
     rep_min: 8,
     rep_max: 10,
     progression_increment_lbs: 0, // 0 = use exercise default
