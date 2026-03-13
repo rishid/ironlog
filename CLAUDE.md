@@ -16,8 +16,10 @@ frontend/          Vue 3 + Vite + Tailwind + Pinia
     lib/           planGenerator, progression, oneRepMax, seedData, migrate
     pb.ts          PocketBase client singleton
     types.ts       All TypeScript interfaces
+Taskfile.yml       go-task commands (dev, build, seed, docker:*, ci)
 docker-compose.yml
 Dockerfile         Multi-stage: node build → PocketBase binary + pb_public
+.github/workflows/ CI (typecheck + build) and Docker (build + push to GHCR)
 ```
 
 ## Key Concepts
@@ -37,14 +39,16 @@ workout_sessions, session_exercises, weight_entries, measurements, personal_reco
 
 All collections have empty API rules (public access). No auth needed.
 
-## Commands
+## Commands (go-task)
 
 ```bash
-make dev           # Start Vite dev server (needs PocketBase running on :8090)
-make build         # Build frontend
-make seed          # Run migration + seed script against PocketBase
-make docker-build  # Build Docker image
-make docker-up     # Start with docker compose
+task dev           # Start Vite dev server (needs PocketBase running on :8090)
+task build         # Build frontend (typecheck + vite build)
+task typecheck     # Run vue-tsc only
+task seed          # Run migration + seed script against PocketBase
+task docker:build  # Build Docker image
+task docker:up     # Start with docker compose
+task ci            # Run all CI checks (typecheck + build)
 ```
 
 ## Seed Script
@@ -77,7 +81,7 @@ All exercises in the seed data are designed for this equipment. When adding exer
 ## Common Tasks
 
 ### Adding a new exercise
-Add to `exercises` array in `frontend/src/lib/seedData.ts`, then re-run `make seed`. Or add via PocketBase admin UI at `http://localhost:8090/_/`.
+Add to `exercises` array in `frontend/src/lib/seedData.ts`, then re-run `task seed`. Or add via PocketBase admin UI at `http://localhost:8090/_/`.
 
 ### Adding exercises to a program session
 Edit the session's `exercises` array in `seedData.ts` using `anchor()`, `pool()`, or `finisher()` helpers.

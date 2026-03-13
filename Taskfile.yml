@@ -1,0 +1,97 @@
+version: "3"
+
+vars:
+  IMAGE_NAME: ironlog
+  PB_URL: http://localhost:8090
+  PB_ADMIN_EMAIL: admin@ironlog.local
+  PB_ADMIN_PASSWORD: adminpassword123
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  # --- Development ---
+
+  install:
+    desc: Install frontend dependencies
+    dir: frontend
+    cmds:
+      - npm ci
+    sources:
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+
+  dev:
+    desc: Start Vite dev server
+    dir: frontend
+    deps: [install]
+    cmds:
+      - npx vite
+
+  typecheck:
+    desc: Run TypeScript type checking
+    dir: frontend
+    deps: [install]
+    cmds:
+      - npx vue-tsc --noEmit
+
+  build:
+    desc: Build frontend for production
+    dir: frontend
+    deps: [install]
+    cmds:
+      - npx vue-tsc --noEmit
+      - npx vite build
+
+  preview:
+    desc: Preview production build locally
+    dir: frontend
+    deps: [build]
+    cmds:
+      - npx vite preview
+
+  # --- Data ---
+
+  seed:
+    desc: Run migration and seed script against PocketBase
+    dir: frontend
+    deps: [install]
+    env:
+      PB_URL: "{{.PB_URL}}"
+      PB_ADMIN_EMAIL: "{{.PB_ADMIN_EMAIL}}"
+      PB_ADMIN_PASSWORD: "{{.PB_ADMIN_PASSWORD}}"
+    cmds:
+      - npx tsx src/lib/migrate.ts
+
+  # --- Docker ---
+
+  docker:build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t {{.IMAGE_NAME}} .
+
+  docker:up:
+    desc: Start containers
+    cmds:
+      - docker compose up -d
+
+  docker:down:
+    desc: Stop containers
+    cmds:
+      - docker compose down
+
+  docker:logs:
+    desc: Tail container logs
+    cmds:
+      - docker compose logs -f
+
+  # --- CI ---
+
+  ci:
+    desc: Run all CI checks (typecheck + build)
+    cmds:
+      - task: typecheck
+      - task: build

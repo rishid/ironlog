@@ -14,10 +14,12 @@ A personal workout tracker PWA built with Vue 3 and PocketBase. Designed for a t
 
 ## Quick Start
 
+Requires [go-task](https://taskfile.dev) (`brew install go-task` / `go install github.com/go-task/task/v3/cmd/task@latest`).
+
 ### Docker (recommended)
 
 ```bash
-docker compose up -d
+task docker:up
 ```
 
 Open `http://localhost:8090`. Create an admin account at `http://localhost:8090/_/`.
@@ -25,7 +27,7 @@ Open `http://localhost:8090`. Create an admin account at `http://localhost:8090/
 Then seed the database:
 
 ```bash
-make seed
+task seed
 ```
 
 ### Local Development
@@ -35,13 +37,27 @@ make seed
 ./pocketbase serve
 
 # Terminal 2: Seed data
-make seed
+task seed
 
 # Terminal 3: Start Vite dev server
-make dev
+task dev
 ```
 
 Open `http://localhost:5173`. The Vite dev server proxies API calls to PocketBase on port 8090.
+
+### Available Tasks
+
+```
+task dev           Start Vite dev server
+task build         Typecheck + build frontend
+task typecheck     Run vue-tsc type checking
+task seed          Migrate & seed PocketBase
+task docker:build  Build Docker image
+task docker:up     Start containers
+task docker:down   Stop containers
+task docker:logs   Tail container logs
+task ci            Run all CI checks
+```
 
 ## Project Structure
 
@@ -114,14 +130,28 @@ collections, and conventions so it can make changes confidently.
 
 1. **Be specific about equipment.** Say "I have a pull-up bar and resistance bands" not just "add some exercises."
 2. **Reference existing patterns.** "Add it like the Push day exercises" tells Claude to use the same `anchor()`/`pool()` structure.
-3. **Ask for the seed command.** After any exercise/program changes, you need to re-run `make seed` against a fresh PocketBase or manually add via the admin UI.
+3. **Ask for the seed command.** After any exercise/program changes, you need to re-run `task seed` against a fresh PocketBase or manually add via the admin UI.
 4. **Review the diff.** AI changes to `seedData.ts` can be large. Scan the exercise names and rep ranges.
+
+## CI/CD
+
+GitHub Actions workflows in `.github/workflows/`:
+
+- **ci.yml** — Runs on push/PR to `main`. Typechecks with `vue-tsc`, builds with Vite, uploads build artifact.
+- **docker.yml** — Runs on push/PR to `main` and version tags. Builds multi-arch Docker image (amd64 + arm64) and pushes to GHCR. Uses build cache for fast rebuilds.
+
+Pull the latest image:
+
+```bash
+docker pull ghcr.io/OWNER/ironlog:latest
+```
 
 ## Tech Stack
 
 - **Frontend**: Vue 3, TypeScript, Vite, Tailwind CSS, Pinia, Chart.js, VitePWA
 - **Backend**: PocketBase (SQLite, REST API, admin UI, static file serving)
-- **Deployment**: Docker multi-stage build (Node → PocketBase)
+- **Build**: go-task, GitHub Actions
+- **Deployment**: Docker multi-stage build (Node → PocketBase), GHCR
 
 ## License
 
