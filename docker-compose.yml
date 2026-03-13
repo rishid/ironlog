@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: ironlog
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pb_data:/pb/pb_data
+      - ./pb_public:/pb/pb_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ironlog.rule=Host(`ironlog.yourdomain.com`)"
+      - "traefik.http.routers.ironlog.entrypoints=websecure"
+      - "traefik.http.routers.ironlog.tls.certresolver=letsencrypt"
