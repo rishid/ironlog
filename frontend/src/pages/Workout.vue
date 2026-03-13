@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePersonStore } from '../stores/person'
 import { useSessionStore } from '../stores/session'
@@ -32,13 +32,70 @@ const poolMap = ref<Map<string, ExercisePoolExpanded>>(new Map())
 // Refs to ExerciseCard components
 const exerciseCardRefs = ref<InstanceType<typeof ExerciseCard>[]>([])
 
+// Wake Lock to keep screen on
+let wakeLock: WakeLockSentinel | null = null
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen')
+      wakeLock.addEventListener('release', () => { wakeLock = null })
+    }
+  } catch { /* user denied or not supported */ }
+}
+
+function releaseWakeLock() {
+  wakeLock?.release()
+  wakeLock = null
+}
+
+// Re-acquire wake lock when tab becomes visible again (iOS releases it on sleep)
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible' && isActive.value) {
+    requestWakeLock()
+  }
+}
+
 onMounted(async () => {
   const sessionId = route.query.sessionId as string
+
   if (sessionId && !isActive.value) {
+    // Starting a new session from dashboard
     await startNewSession(sessionId)
+  } else if (isActive.value && activeSession.value?.program_session) {
+    // Restoring from persisted state (e.g., after iOS sleep/tab kill)
+    await restorePoolMap(activeSession.value.program_session)
   }
+
   startElapsedTimer()
+
+  if (isActive.value) {
+    requestWakeLock()
+  }
+
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+  releaseWakeLock()
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
+
+async function restorePoolMap(programSessionId: string) {
+  try {
+    const ps = await pb.collection('program_sessions').getOne<ProgramSession>(programSessionId)
+    programSession.value = ps
+
+    const pool = await pb.collection('exercise_pool').getFullList<ExercisePoolExpanded>({
+      filter: `program_session = "${ps.id}"`,
+      expand: 'exercise',
+    })
+    poolMap.value = new Map(pool.map((p) => [p.exercise, p]))
+  } catch (e) {
+    console.error('Failed to restore pool map:', e)
+  }
+}
 
 async function startNewSession(sessionId: string) {
   if (!activePersonId.value) return
@@ -55,6 +112,7 @@ async function startNewSession(sessionId: string) {
     poolMap.value = new Map(pool.map((p) => [p.exercise, p]))
 
     await startSession(activePersonId.value, ps)
+    requestWakeLock()
   } catch (e) {
     console.error('Failed to start session:', e)
   }
@@ -127,7 +185,7 @@ function onSkipSet(exerciseIndex: number, setIndex: number) {
     }
   }
 
-  // Collapse the card — find the right ref among regular exercises
+  // Collapse the card
   const regIdx = regularExercises.value.indexOf(exercise)
   if (regIdx >= 0 && exerciseCardRefs.value[regIdx]) {
     exerciseCardRefs.value[regIdx].collapse()
@@ -153,6 +211,25 @@ async function onFinisherToggle(exerciseIndex: number, completed: boolean) {
     })
   }
   await saveExerciseData(exerciseIndex)
+
+  // Auto-finish if all exercises are now done
+  if (completed) {
+    await nextTick()
+    if (allExercisesDone.value) {
+      await autoFinish()
+    }
+  }
+}
+
+async function autoFinish() {
+  if (!programSession.value || !activePersonId.value) return
+  // Small delay so user sees the checkmark before the dialog
+  await new Promise(r => setTimeout(r, 400))
+  if (!confirm('All done! Finish this workout?')) return
+  await finishSession(activePersonId.value, programSession.value)
+  if (timerInterval) clearInterval(timerInterval)
+  releaseWakeLock()
+  router.push('/')
 }
 
 async function onFinish() {
@@ -160,6 +237,7 @@ async function onFinish() {
   if (!confirm('Finish this workout?')) return
   await finishSession(activePersonId.value, programSession.value)
   if (timerInterval) clearInterval(timerInterval)
+  releaseWakeLock()
   router.push('/')
 }
 
@@ -185,7 +263,6 @@ const muscleGroupSubtitle = computed(() => {
     }
   }
   if (groups.size === 0) return ''
-  // Capitalize and join the top muscle groups
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
   return Array.from(groups).slice(0, 4).map(capitalize).join(' / ')
 })
@@ -203,6 +280,10 @@ const progressPercent = computed(() => {
   return (completedExercises.value / totalExercises.value) * 100
 })
 
+const allExercisesDone = computed(() =>
+  totalExercises.value > 0 && completedExercises.value === totalExercises.value
+)
+
 // Warmup suggestion based on session type
 const warmupText = computed(() => {
   const type = programSession.value?.session_type
@@ -215,7 +296,7 @@ const warmupDismissed = ref(false)
 </script>
 
 <template>
-  <div class="p-4 max-w-2xl mx-auto pb-32">
+  <div class="max-w-2xl mx-auto pb-32">
     <!-- PR Banner -->
     <PRBanner
       v-if="prAlert"
@@ -224,13 +305,13 @@ const warmupDismissed = ref(false)
     />
 
     <!-- Generating state -->
-    <div v-if="generating" class="flex flex-col items-center justify-center py-20">
+    <div v-if="generating" class="flex flex-col items-center justify-center py-20 px-4">
       <div class="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin mb-4"></div>
       <p class="text-gray-400">Generating workout...</p>
     </div>
 
     <!-- No active session -->
-    <div v-else-if="!isActive" class="flex flex-col items-center justify-center py-20">
+    <div v-else-if="!isActive" class="flex flex-col items-center justify-center py-20 px-4">
       <p class="text-gray-400 mb-4">No active workout session.</p>
       <button
         @click="router.push('/')"
@@ -242,24 +323,23 @@ const warmupDismissed = ref(false)
 
     <!-- Active session -->
     <template v-else>
-      <!-- Session header -->
-      <div class="flex items-start justify-between mb-2">
-        <div>
-          <h1 class="text-xl font-bold">
-            {{ sessionName }}<span v-if="muscleGroupSubtitle" class="font-normal text-gray-400"> — {{ muscleGroupSubtitle }}</span>
-          </h1>
+      <!-- Sticky header with timer + progress -->
+      <div class="sticky top-0 z-30 bg-surface/95 backdrop-blur-sm px-4 pt-4 pb-3 -mx-0">
+        <div class="flex items-start justify-between mb-2">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-lg font-bold leading-tight truncate">
+              {{ sessionName }}<span v-if="muscleGroupSubtitle" class="font-normal text-gray-400 text-sm"> — {{ muscleGroupSubtitle }}</span>
+            </h1>
+          </div>
+          <button
+            @click="onFinish"
+            :disabled="saving"
+            class="bg-success/20 text-success hover:bg-success/30 font-semibold py-2 px-4 rounded-lg text-sm transition-colors min-h-[44px] ml-3 flex-shrink-0"
+          >
+            {{ saving ? 'Saving...' : 'Finish' }}
+          </button>
         </div>
-        <button
-          @click="onFinish"
-          :disabled="saving"
-          class="bg-success/20 text-success hover:bg-success/30 font-semibold py-2 px-4 rounded-lg text-sm transition-colors min-h-[44px]"
-        >
-          {{ saving ? 'Saving...' : 'Finish' }}
-        </button>
-      </div>
 
-      <!-- Timer + progress -->
-      <div class="mb-5">
         <div class="flex items-center justify-between text-sm mb-2">
           <span class="text-gray-400">{{ activePerson?.name }} · <span class="text-accent font-mono font-semibold">{{ elapsedTimer || '0:00' }}</span></span>
           <span class="font-semibold" :class="progressPercent >= 100 ? 'text-success' : 'text-accent'">{{ completedExercises }}/{{ totalExercises }} exercises</span>
@@ -274,65 +354,67 @@ const warmupDismissed = ref(false)
         </div>
       </div>
 
-      <!-- Warmup callout -->
-      <div
-        class="rounded-xl p-4 mb-4 flex items-center justify-between border transition-colors"
-        :class="warmupDismissed
-          ? 'bg-success/5 border-success/20'
-          : 'bg-surface-lighter border-gray-700/50'"
-      >
-        <div class="flex items-center gap-3">
-          <span class="text-xl">🔥</span>
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">Warm-up</p>
-            <p class="text-sm font-medium" :class="warmupDismissed ? 'text-success/70' : ''">{{ warmupText }}</p>
-          </div>
-        </div>
-        <button
-          @click="warmupDismissed = !warmupDismissed"
-          class="w-11 h-11 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+      <div class="px-4">
+        <!-- Warmup callout -->
+        <div
+          class="rounded-xl p-4 mb-4 flex items-center justify-between border transition-colors"
           :class="warmupDismissed
-            ? 'bg-success/20 text-success'
-            : 'bg-surface-light text-gray-500 hover:text-success hover:bg-success/10'"
+            ? 'bg-success/5 border-success/20'
+            : 'bg-surface-lighter border-gray-700/50'"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
-      </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🔥</span>
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">Warm-up</p>
+              <p class="text-sm font-medium" :class="warmupDismissed ? 'text-success/70' : ''">{{ warmupText }}</p>
+            </div>
+          </div>
+          <button
+            @click="warmupDismissed = !warmupDismissed"
+            class="w-11 h-11 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+            :class="warmupDismissed
+              ? 'bg-success/20 text-success'
+              : 'bg-surface-light text-gray-500 hover:text-success hover:bg-success/10'"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
 
-      <!-- Exercise list -->
-      <div class="space-y-3">
-        <!-- Regular exercises (anchors + fills) -->
-        <ExerciseCard
-          v-for="(exercise, i) in regularExercises"
-          :key="exercise.id"
-          :ref="(el: any) => { if (el) exerciseCardRefs[i] = el }"
-          :exercise="exercise as any"
-          :exercise-index="exercises.indexOf(exercise)"
-          :pool-entry="poolMap.get((exercise as any).exercise)"
-          :can-swap="!exercise.is_anchor"
-          @update-set="onUpdateSet"
-          @complete-set="onCompleteSet"
-          @skip-set="onSkipSet"
-          @add-set="onAddSet"
-          @swap="onSwap"
-        />
+        <!-- Exercise list -->
+        <div class="space-y-3">
+          <!-- Regular exercises (anchors + fills) -->
+          <ExerciseCard
+            v-for="(exercise, i) in regularExercises"
+            :key="exercise.id"
+            :ref="(el: any) => { if (el) exerciseCardRefs[i] = el }"
+            :exercise="exercise as any"
+            :exercise-index="exercises.indexOf(exercise)"
+            :pool-entry="poolMap.get((exercise as any).exercise)"
+            :can-swap="!exercise.is_anchor"
+            @update-set="onUpdateSet"
+            @complete-set="onCompleteSet"
+            @skip-set="onSkipSet"
+            @add-set="onAddSet"
+            @swap="onSwap"
+          />
 
-        <!-- Finishers -->
-        <div v-if="finisherExercises.length > 0">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 mt-6">Finishers</p>
-          <div class="space-y-2">
-            <FinisherBlock
-              v-for="(exercise, i) in finisherExercises"
-              :key="exercise.id"
-              :exercise-name="(exercise as any).expand?.exercise?.name || 'Finisher'"
-              :notes="(exercise as any).expand?.exercise?.notes || ''"
-              :rep-min="poolMap.get((exercise as any).exercise)?.rep_min || 1"
-              :rep-max="poolMap.get((exercise as any).exercise)?.rep_max || 1"
-              :completed="exercise.sets_data.every(s => s.completed)"
-              @toggle="(completed) => onFinisherToggle(exercises.indexOf(exercise), completed)"
-            />
+          <!-- Finishers -->
+          <div v-if="finisherExercises.length > 0">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 mt-6">Finishers</p>
+            <div class="space-y-2">
+              <FinisherBlock
+                v-for="(exercise, i) in finisherExercises"
+                :key="exercise.id"
+                :exercise-name="(exercise as any).expand?.exercise?.name || 'Finisher'"
+                :notes="(exercise as any).expand?.exercise?.notes || ''"
+                :rep-min="poolMap.get((exercise as any).exercise)?.rep_min || 1"
+                :rep-max="poolMap.get((exercise as any).exercise)?.rep_max || 1"
+                :completed="exercise.sets_data.every(s => s.completed)"
+                @toggle="(completed) => onFinisherToggle(exercises.indexOf(exercise), completed)"
+              />
+            </div>
           </div>
         </div>
       </div>

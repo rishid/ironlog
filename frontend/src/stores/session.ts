@@ -1,6 +1,37 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { WorkoutSession, SessionExercise, SetData } from '../types'
+
+const STORAGE_KEY = 'ironlog-session'
+
+interface PersistedState {
+  activeSession: WorkoutSession | null
+  exercises: SessionExercise[]
+  startTime: number | null
+}
+
+function saveToStorage(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch { /* quota exceeded or private browsing */ }
+}
+
+function loadFromStorage(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const state = JSON.parse(raw) as PersistedState
+    // Basic validation
+    if (!state.activeSession || !Array.isArray(state.exercises)) return null
+    return state
+  } catch {
+    return null
+  }
+}
+
+function clearStorage() {
+  localStorage.removeItem(STORAGE_KEY)
+}
 
 export const useSessionStore = defineStore('session', () => {
   const activeSession = ref<WorkoutSession | null>(null)
@@ -8,11 +39,36 @@ export const useSessionStore = defineStore('session', () => {
   const startTime = ref<number | null>(null)
   const isActive = computed(() => activeSession.value !== null && !activeSession.value.completed)
 
-  // Rest timer state
+  // Rest timer state (not persisted — transient)
   const restTimerSeconds = ref(0)
   const restTimerTotal = ref(0)
   const restTimerRunning = ref(false)
   let restInterval: ReturnType<typeof setInterval> | null = null
+
+  // Restore from localStorage on init
+  const saved = loadFromStorage()
+  if (saved) {
+    activeSession.value = saved.activeSession
+    exercises.value = saved.exercises
+    startTime.value = saved.startTime
+  }
+
+  // Persist on every change
+  watch(
+    [activeSession, exercises, startTime],
+    () => {
+      if (activeSession.value) {
+        saveToStorage({
+          activeSession: activeSession.value,
+          exercises: exercises.value,
+          startTime: startTime.value,
+        })
+      } else {
+        clearStorage()
+      }
+    },
+    { deep: true },
+  )
 
   function startSession(session: WorkoutSession, sessionExercises: SessionExercise[]) {
     activeSession.value = session
@@ -94,6 +150,7 @@ export const useSessionStore = defineStore('session', () => {
     exercises.value = []
     startTime.value = null
     stopRestTimer()
+    clearStorage()
   }
 
   function getElapsedMinutes(): number {
