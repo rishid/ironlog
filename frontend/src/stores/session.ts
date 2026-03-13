@@ -40,6 +40,7 @@ export const useSessionStore = defineStore('session', () => {
       reps_target: lastSet?.reps_target || 10,
       reps_actual: 0,
       completed: false,
+      skipped: false,
       type: 'normal',
     }
     exercises.value[exerciseIndex] = {

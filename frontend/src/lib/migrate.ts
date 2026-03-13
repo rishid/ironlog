@@ -21,7 +21,8 @@ const pb = new PocketBase(PB_URL)
 
 async function authenticate() {
   try {
-    await pb.admins.authWithPassword(PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD)
+    // PocketBase 0.22+ uses _superusers instead of the old admins API
+    await pb.collection('_superusers').authWithPassword(PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD)
     console.log('Authenticated as admin')
   } catch (e) {
     console.error('Failed to authenticate. Make sure PocketBase is running and admin credentials are correct.')
@@ -39,12 +40,22 @@ async function collectionExists(name: string): Promise<boolean> {
   }
 }
 
+// PocketBase 0.22+ uses a flat `fields` array instead of the old nested `schema/options` format.
+// Relation fields: collectionId/maxSelect are top-level on the field object.
+// Select fields: values/maxSelect are top-level on the field object.
+function rel(name: string, required = false) {
+  return { name, type: 'relation', required, collectionId: '__PLACEHOLDER__', maxSelect: 1 }
+}
+function sel(name: string, values: string[], required = false) {
+  return { name, type: 'select', required, values, maxSelect: 1 }
+}
+
 async function createCollections() {
-  const collections = [
+  const collections: { name: string; type: string; fields: any[] }[] = [
     {
       name: 'people',
       type: 'base',
-      schema: [
+      fields: [
         { name: 'name', type: 'text', required: true },
         { name: 'avatar_color', type: 'text', required: true },
         { name: 'sessions_per_week_target', type: 'number', required: true },
@@ -53,171 +64,138 @@ async function createCollections() {
     {
       name: 'exercise_library',
       type: 'base',
-      schema: [
+      fields: [
         { name: 'name', type: 'text', required: true },
-        { name: 'muscle_groups', type: 'json', required: false },
-        { name: 'equipment', type: 'json', required: false },
-        { name: 'type', type: 'select', required: true, options: { values: ['strength', 'cardio', 'plyometric', 'core'] } },
-        { name: 'default_increment_lbs', type: 'number', required: false },
-        { name: 'notes', type: 'text', required: false },
-        { name: 'youtube_url', type: 'url', required: false },
-        { name: 'archived', type: 'bool', required: false },
+        { name: 'muscle_groups', type: 'json' },
+        { name: 'equipment', type: 'json' },
+        sel('type', ['strength', 'cardio', 'plyometric', 'core'], true),
+        { name: 'default_increment_lbs', type: 'number' },
+        { name: 'notes', type: 'text' },
+        { name: 'youtube_url', type: 'url' },
+        { name: 'archived', type: 'bool' },
       ],
     },
     {
       name: 'programs',
       type: 'base',
-      schema: [
+      fields: [
         { name: 'name', type: 'text', required: true },
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'active', type: 'bool', required: false },
-        { name: 'version', type: 'number', required: false },
-        { name: 'created_date', type: 'date', required: false },
-        { name: 'notes', type: 'text', required: false },
+        rel('person', true),
+        { name: 'active', type: 'bool' },
+        { name: 'version', type: 'number' },
+        { name: 'created_date', type: 'date' },
+        { name: 'notes', type: 'text' },
       ],
     },
     {
       name: 'program_sessions',
       type: 'base',
-      schema: [
-        { name: 'program', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
+      fields: [
+        rel('program', true),
         { name: 'name', type: 'text', required: true },
         { name: 'sequence_order', type: 'number', required: true },
-        { name: 'session_type', type: 'select', required: true, options: { values: ['strength', 'cardio', 'recovery', 'mixed'] } },
-        { name: 'target_duration_minutes', type: 'number', required: false },
-        { name: 'target_exercise_count', type: 'number', required: false },
+        sel('session_type', ['strength', 'cardio', 'recovery', 'mixed'], true),
+        { name: 'target_duration_minutes', type: 'number' },
+        { name: 'target_exercise_count', type: 'number' },
       ],
     },
     {
       name: 'exercise_pool',
       type: 'base',
-      schema: [
-        { name: 'program_session', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'exercise', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'is_anchor', type: 'bool', required: false },
-        { name: 'is_finisher', type: 'bool', required: false },
-        { name: 'priority', type: 'number', required: false },
-        { name: 'sets_target', type: 'number', required: false },
-        { name: 'rep_min', type: 'number', required: false },
-        { name: 'rep_max', type: 'number', required: false },
-        { name: 'progression_increment_lbs', type: 'number', required: false },
-        { name: 'rest_seconds', type: 'number', required: false },
-        { name: 'max_per_week', type: 'number', required: false },
-        { name: 'sort_hint', type: 'number', required: false },
+      fields: [
+        rel('program_session', true),
+        rel('exercise', true),
+        { name: 'is_anchor', type: 'bool' },
+        { name: 'is_finisher', type: 'bool' },
+        { name: 'priority', type: 'number' },
+        { name: 'sets_target', type: 'number' },
+        { name: 'rep_min', type: 'number' },
+        { name: 'rep_max', type: 'number' },
+        { name: 'progression_increment_lbs', type: 'number' },
+        { name: 'rest_seconds', type: 'number' },
+        { name: 'max_per_week', type: 'number' },
+        { name: 'sort_hint', type: 'number' },
       ],
     },
     {
       name: 'person_programs',
       type: 'base',
-      schema: [
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'program', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'active', type: 'bool', required: false },
-        { name: 'current_sequence_position', type: 'number', required: false },
-        { name: 'started_date', type: 'date', required: false },
+      fields: [
+        rel('person', true),
+        rel('program', true),
+        { name: 'active', type: 'bool' },
+        { name: 'current_sequence_position', type: 'number' },
+        { name: 'started_date', type: 'date' },
       ],
     },
     {
       name: 'workout_sessions',
       type: 'base',
-      schema: [
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'program_session', type: 'relation', required: false, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'suggested_session', type: 'relation', required: false, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'sequence_skipped', type: 'bool', required: false },
-        { name: 'sequence_position_at_time', type: 'number', required: false },
+      fields: [
+        rel('person', true),
+        rel('program_session'),
+        rel('suggested_session'),
+        { name: 'sequence_skipped', type: 'bool' },
+        { name: 'sequence_position_at_time', type: 'number' },
         { name: 'date', type: 'date', required: true },
-        { name: 'template_snapshot', type: 'json', required: false },
-        { name: 'notes', type: 'text', required: false },
-        { name: 'completed', type: 'bool', required: false },
-        { name: 'duration_minutes', type: 'number', required: false },
+        { name: 'template_snapshot', type: 'json' },
+        { name: 'notes', type: 'text' },
+        { name: 'completed', type: 'bool' },
+        { name: 'duration_minutes', type: 'number' },
       ],
     },
     {
       name: 'session_exercises',
       type: 'base',
-      schema: [
-        { name: 'session', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'exercise', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'is_anchor', type: 'bool', required: false },
-        { name: 'is_finisher', type: 'bool', required: false },
-        { name: 'sort_order', type: 'number', required: false },
-        { name: 'sets_data', type: 'json', required: false },
+      fields: [
+        rel('session', true),
+        rel('exercise', true),
+        { name: 'is_anchor', type: 'bool' },
+        { name: 'is_finisher', type: 'bool' },
+        { name: 'sort_order', type: 'number' },
+        { name: 'sets_data', type: 'json' },
       ],
     },
     {
       name: 'weight_entries',
       type: 'base',
-      schema: [
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
+      fields: [
+        rel('person', true),
         { name: 'date', type: 'date', required: true },
         { name: 'weight_lbs', type: 'number', required: true },
-        { name: 'body_fat_pct', type: 'number', required: false },
-        { name: 'notes', type: 'text', required: false },
+        { name: 'body_fat_pct', type: 'number' },
+        { name: 'notes', type: 'text' },
       ],
     },
     {
       name: 'measurements',
       type: 'base',
-      schema: [
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
+      fields: [
+        rel('person', true),
         { name: 'date', type: 'date', required: true },
-        { name: 'waist_in', type: 'number', required: false },
-        { name: 'chest_in', type: 'number', required: false },
-        { name: 'left_arm_in', type: 'number', required: false },
-        { name: 'right_arm_in', type: 'number', required: false },
-        { name: 'notes', type: 'text', required: false },
+        { name: 'waist_in', type: 'number' },
+        { name: 'chest_in', type: 'number' },
+        { name: 'left_arm_in', type: 'number' },
+        { name: 'right_arm_in', type: 'number' },
+        { name: 'notes', type: 'text' },
       ],
     },
     {
       name: 'personal_records',
       type: 'base',
-      schema: [
-        { name: 'person', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
-        { name: 'exercise', type: 'relation', required: true, options: { collectionId: '', maxSelect: 1 } },
+      fields: [
+        rel('person', true),
+        rel('exercise', true),
         { name: 'weight_lbs', type: 'number', required: true },
         { name: 'reps', type: 'number', required: true },
-        { name: 'estimated_1rm', type: 'number', required: false },
+        { name: 'estimated_1rm', type: 'number' },
         { name: 'date', type: 'date', required: true },
-        { name: 'session', type: 'relation', required: false, options: { collectionId: '', maxSelect: 1 } },
+        rel('session'),
       ],
     },
   ]
 
-  // Resolve relation collection IDs
-  const collectionIdMap: Record<string, string> = {}
-
-  for (const col of collections) {
-    if (await collectionExists(col.name)) {
-      const existing = await pb.collections.getOne(col.name)
-      collectionIdMap[col.name] = existing.id
-      console.log(`Collection "${col.name}" already exists (${existing.id})`)
-      continue
-    }
-
-    // First pass: create without relation targets
-    const schemaWithoutRelations = col.schema.map((field: any) => {
-      if (field.type === 'relation') {
-        return { ...field, options: { ...field.options, collectionId: 'placeholder' } }
-      }
-      return field
-    })
-
-    const created = await pb.collections.create({
-      name: col.name,
-      type: col.type,
-      schema: schemaWithoutRelations,
-      listRule: '',
-      viewRule: '',
-      createRule: '',
-      updateRule: '',
-      deleteRule: '',
-    })
-    collectionIdMap[col.name] = created.id
-    console.log(`Created collection "${col.name}" (${created.id})`)
-  }
-
-  // Second pass: fix relation targets
+  // Map collection name → target for each relation field
   const relationMap: Record<string, string> = {
     'programs.person': 'people',
     'program_sessions.program': 'programs',
@@ -237,23 +215,42 @@ async function createCollections() {
     'personal_records.session': 'workout_sessions',
   }
 
-  for (const col of collections) {
-    const hasRelations = col.schema.some((f: any) => f.type === 'relation')
-    if (!hasRelations) continue
+  const collectionIdMap: Record<string, string> = {}
 
-    const updatedSchema = col.schema.map((field: any) => {
+  // Single forward pass — collections are ordered so dependencies are always resolved
+  // before collections that depend on them (no circular refs in this schema).
+  for (const col of collections) {
+    if (await collectionExists(col.name)) {
+      const existing = await pb.collections.getOne(col.name)
+      collectionIdMap[col.name] = existing.id
+      console.log(`Collection "${col.name}" already exists (${existing.id})`)
+      continue
+    }
+
+    // Resolve relation collectionIds using IDs we've already collected
+    const resolvedFields = col.fields.map((field: any) => {
       if (field.type === 'relation') {
         const key = `${col.name}.${field.name}`
-        const targetCollection = relationMap[key]
-        if (targetCollection && collectionIdMap[targetCollection]) {
-          return { ...field, options: { ...field.options, collectionId: collectionIdMap[targetCollection] } }
+        const target = relationMap[key]
+        if (target && collectionIdMap[target]) {
+          return { ...field, collectionId: collectionIdMap[target] }
         }
       }
       return field
     })
 
-    await pb.collections.update(collectionIdMap[col.name], { schema: updatedSchema })
-    console.log(`Updated relations for "${col.name}"`)
+    const created = await pb.collections.create({
+      name: col.name,
+      type: col.type,
+      fields: resolvedFields,
+      listRule: '',
+      viewRule: '',
+      createRule: '',
+      updateRule: '',
+      deleteRule: '',
+    })
+    collectionIdMap[col.name] = created.id
+    console.log(`Created collection "${col.name}" (${created.id})`)
   }
 
   return collectionIdMap

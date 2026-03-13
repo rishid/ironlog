@@ -102,6 +102,7 @@ export function buildInitialSets(
       reps_target: poolEntry.rep_max,
       reps_actual: 0,
       completed: false,
+      skipped: false,
       type: 'normal',
     })
   }

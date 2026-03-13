@@ -78,8 +78,15 @@ async function onCompleteSet(exerciseIndex: number, setIndex: number) {
   const exercise = exercises.value[exerciseIndex]
   if (!exercise) return
 
-  // Ensure reps_actual is set
   const set = exercise.sets_data[setIndex]
+
+  // Toggle: uncheck if already completed
+  if (set.completed) {
+    sessionStore.updateSetData(exerciseIndex, setIndex, { completed: false })
+    return
+  }
+
+  // Ensure reps_actual is set
   if (!set.reps_actual) {
     sessionStore.updateSetData(exerciseIndex, setIndex, { reps_actual: set.reps_target })
   }
@@ -96,8 +103,10 @@ function onAddSet(exerciseIndex: number) {
   sessionStore.addSet(exerciseIndex)
 }
 
-function onRemoveSet(exerciseIndex: number, setIndex: number) {
-  sessionStore.removeSet(exerciseIndex, setIndex)
+function onSkipSet(exerciseIndex: number, setIndex: number) {
+  const set = exercises.value[exerciseIndex]?.sets_data[setIndex]
+  if (!set) return
+  sessionStore.updateSetData(exerciseIndex, setIndex, { skipped: !set.skipped })
 }
 
 async function onSwap(exerciseIndex: number) {
@@ -191,11 +200,12 @@ const sessionName = computed(() => programSession.value?.name || activeSession.v
           :key="exercise.id"
           :exercise="exercise as any"
           :exercise-index="exercises.indexOf(exercise)"
+          :pool-entry="poolMap.get((exercise as any).exercise)"
           :can-swap="!exercise.is_anchor"
           @update-set="onUpdateSet"
           @complete-set="onCompleteSet"
+          @skip-set="onSkipSet"
           @add-set="onAddSet"
-          @remove-set="onRemoveSet"
           @swap="onSwap"
         />
 
