@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
+import { usePersonStore } from './stores/person'
+import PersonSelector from './components/PersonSelector.vue'
 
 const route = useRoute()
-const router = useRouter()
+const personStore = usePersonStore()
+
+onMounted(() => {
+  personStore.loadPeople()
+})
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: 'home' },
@@ -25,7 +32,10 @@ const navIcons: Record<string, string> = {
   <div class="min-h-screen flex flex-col lg:flex-row">
     <!-- Desktop sidebar -->
     <nav class="hidden lg:flex lg:flex-col lg:w-64 bg-surface-light border-r border-gray-700/50 p-4">
-      <h1 class="text-2xl font-bold text-accent mb-8 px-3">IronLog</h1>
+      <h1 class="text-2xl font-bold text-accent mb-4 px-3">IronLog</h1>
+      <div class="mb-6 px-3">
+        <PersonSelector />
+      </div>
       <router-link
         v-for="item in navItems"
         :key="item.path"
@@ -40,13 +50,19 @@ const navIcons: Record<string, string> = {
       </router-link>
     </nav>
 
+    <!-- Mobile top bar -->
+    <header class="lg:hidden flex items-center justify-between px-4 py-3 bg-surface-light border-b border-gray-700/50" style="padding-top: calc(env(safe-area-inset-top) + 0.75rem)">
+      <h1 class="text-lg font-bold text-accent">IronLog</h1>
+      <PersonSelector />
+    </header>
+
     <!-- Main content -->
-    <main class="flex-1 pb-20 lg:pb-0">
+    <main class="flex-1 pb-20 lg:pb-0 overflow-y-auto">
       <RouterView />
     </main>
 
     <!-- Mobile bottom nav -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 flex justify-around items-center px-2" style="padding-bottom: env(safe-area-inset-bottom)">
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 flex justify-around items-center px-2 z-50" style="padding-bottom: env(safe-area-inset-bottom)">
       <router-link
         v-for="item in navItems"
         :key="item.path"
