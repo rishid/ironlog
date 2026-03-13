@@ -2,6 +2,7 @@ node_modules/
 dist/
 pb_data/
 pb_public/
+bin/
 .env
 *.local
 .DS_Store

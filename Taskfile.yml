@@ -2,6 +2,7 @@ version: "3"
 
 vars:
   IMAGE_NAME: ironlog
+  PB_VERSION: "0.36.6"
   PB_URL: http://localhost:8090
   PB_ADMIN_EMAIL: admin@ironlog.local
   PB_ADMIN_PASSWORD: adminpassword123
@@ -11,6 +12,34 @@ tasks:
     desc: List available tasks
     cmds:
       - task --list
+
+  # --- Setup ---
+
+  setup:
+    desc: Set up local dev environment (install deps + download PocketBase)
+    deps: [install, pb:setup]
+
+  pb:setup:
+    desc: Download PocketBase binary for local development
+    vars:
+      PB_OS:
+        sh: uname -s | tr '[:upper:]' '[:lower:]'
+      PB_ARCH:
+        sh: uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'
+    cmds:
+      - mkdir -p bin
+      - curl -sL "https://github.com/pocketbase/pocketbase/releases/download/v{{.PB_VERSION}}/pocketbase_{{.PB_VERSION}}_{{.PB_OS}}_{{.PB_ARCH}}.zip" -o /tmp/pb.zip
+      - unzip -qo /tmp/pb.zip pocketbase -d bin/
+      - rm /tmp/pb.zip
+      - chmod +x bin/pocketbase
+    status:
+      - test -f bin/pocketbase
+
+  pb:start:
+    desc: Start PocketBase locally on :8090 (with pb_data in project root)
+    deps: [pb:setup]
+    cmds:
+      - ./bin/pocketbase serve --http=0.0.0.0:8090
 
   # --- Development ---
 

@@ -1,5 +1,5 @@
 # Stage 1: Build Vue frontend
-FROM node:20-alpine AS frontend-build
+FROM node:25-alpine AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -7,12 +7,13 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: PocketBase with built frontend
-FROM alpine:3.19 AS production
-ARG PB_VERSION=0.23.4
+FROM alpine:3.23 AS production
+ARG PB_VERSION=0.36.6
 ARG TARGETARCH
 
 RUN apk add --no-cache \
     ca-certificates \
+    tzdata \
     unzip \
     wget
 
