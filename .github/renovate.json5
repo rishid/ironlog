@@ -64,5 +64,12 @@
       automerge: false,
       addLabels: ["dep/major"],
     },
+    {
+      description: "Auto-merge GitHub Actions major updates",
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["major"],
+      automerge: true,
+      automergeType: "branch",
+    },
   ],
 }
