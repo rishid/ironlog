@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePersonStore } from '../stores/person'
 import { storeToRefs } from 'pinia'
 import { useSequence } from '../composables/useSequence'
 import { usePerson } from '../composables/usePerson'
 import SessionPicker from '../components/SessionPicker.vue'
+import WeightChart from '../components/WeightChart.vue'
+import pb from '../pb'
 import type { ProgramSession, WorkoutSessionExpanded } from '../types'
 
 const router = useRouter()
 const personStore = usePersonStore()
-const { activePerson } = storeToRefs(personStore)
+const { activePerson, activePersonId } = storeToRefs(personStore)
 const { suggestedSession, sessions, loading: seqLoading, load: loadSequence } = useSequence()
 const { recentSessions, recentWeights, sessionsThisWeek, loading: dataLoading, loadDashboardData } = usePerson()
 
@@ -36,8 +38,32 @@ const lastSession = computed(() => {
   return recentSessions.value[0] as WorkoutSessionExpanded | undefined
 })
 
+const weightInput = ref('')
+const showWeightInput = ref(false)
+const savingWeight = ref(false)
+
 function onSessionSelect(session: ProgramSession) {
   router.push({ path: '/workout', query: { sessionId: session.id } })
+}
+
+async function saveWeight() {
+  const val = parseFloat(weightInput.value)
+  if (!val || !activePersonId.value) return
+  savingWeight.value = true
+  try {
+    await pb.collection('weight_entries').create({
+      person: activePersonId.value,
+      date: new Date().toISOString(),
+      weight_lbs: val,
+    })
+    weightInput.value = ''
+    showWeightInput.value = false
+    loadDashboardData()
+  } catch (e) {
+    console.error('Failed to save weight:', e)
+  } finally {
+    savingWeight.value = false
+  }
 }
 
 function formatDate(dateStr: string): string {
@@ -119,14 +145,49 @@ function formatDate(dateStr: string): string {
         <!-- Body weight -->
         <div class="bg-surface-lighter rounded-xl p-4">
           <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Weight</p>
-          <div v-if="latestWeight">
+          <div v-if="latestWeight && !showWeightInput">
             <p class="text-2xl font-bold">{{ latestWeight.weight_lbs }}</p>
             <p class="text-xs text-gray-500">lbs · {{ formatDate(latestWeight.date) }}</p>
+            <button
+              @click="showWeightInput = true"
+              class="text-xs text-accent mt-1"
+            >
+              + Log
+            </button>
           </div>
           <div v-else>
-            <p class="text-sm text-gray-500">No entries yet</p>
+            <div class="flex gap-2">
+              <input
+                v-model="weightInput"
+                type="number"
+                step="0.1"
+                inputmode="decimal"
+                placeholder="lbs"
+                class="flex-1 bg-surface-light border border-gray-700 rounded px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                @keyup.enter="saveWeight"
+              />
+              <button
+                @click="saveWeight"
+                :disabled="savingWeight"
+                class="bg-accent text-white px-3 py-1.5 rounded text-sm min-h-[36px]"
+              >
+                Save
+              </button>
+            </div>
+            <button
+              v-if="latestWeight"
+              @click="showWeightInput = false"
+              class="text-xs text-gray-500 mt-1"
+            >
+              Cancel
+            </button>
           </div>
         </div>
+      </div>
+
+      <!-- Weight chart -->
+      <div v-if="recentWeights.length > 1" class="mt-6">
+        <WeightChart :entries="recentWeights" :height="150" />
       </div>
 
       <!-- Last session -->
