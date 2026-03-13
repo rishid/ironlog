@@ -1,5 +1,5 @@
 # Stage 1: Build Vue frontend
-FROM node:25-alpine AS frontend-build
+FROM node:25-alpine@sha256:5209bcaca9836eb3448b650396213dbe9d9a34d31840c2ae1f206cb2986a8543 AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: PocketBase with built frontend
-FROM alpine:3.23 AS production
+FROM alpine:3.23@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS production
 ARG PB_VERSION=0.36.6
 ARG TARGETARCH
 
