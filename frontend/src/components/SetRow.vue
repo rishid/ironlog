@@ -20,14 +20,17 @@ const emit = defineEmits<{
     :class="{ 'opacity-40': set.skipped }"
   >
     <!-- Set number -->
-    <span class="text-xs text-gray-500 w-6 text-center flex-shrink-0">{{ setNumber }}</span>
+    <span
+      class="text-xs font-bold w-6 text-center flex-shrink-0"
+      :class="set.completed ? 'text-success' : set.skipped ? 'text-gray-500' : 'text-accent'"
+    >{{ setNumber }}</span>
 
     <!-- Weight input -->
     <input
       type="number"
       :value="set.weight_lbs || ''"
       @input="emit('update', { weight_lbs: parseFloat(($event.target as HTMLInputElement).value) || 0 })"
-      class="flex-1 min-w-0 bg-surface-light border rounded px-3 py-2 text-sm text-center focus:outline-none transition-colors"
+      class="flex-1 min-w-0 bg-surface-light border rounded px-3 py-2 text-sm font-semibold text-center focus:outline-none transition-colors"
       :class="[
         set.completed
           ? 'border-success/40 text-success bg-success/5'

@@ -259,19 +259,15 @@ async function createCollections() {
 async function seedExercises(): Promise<Record<string, string>> {
   const exerciseIdMap: Record<string, string> = {}
 
-  // Check if already seeded
-  const existing = await pb.collection('exercise_library').getList(1, 1)
-  if (existing.totalItems > 0) {
-    console.log(`Exercise library already has ${existing.totalItems} entries, loading IDs...`)
-    const all = await pb.collection('exercise_library').getFullList()
-    for (const e of all) {
-      exerciseIdMap[e.name] = e.id
-    }
-    return exerciseIdMap
-  }
+  // Load existing exercises
+  const existing = await pb.collection('exercise_library').getFullList()
+  const existingByName = new Map(existing.map(e => [e.name, e]))
+
+  let created = 0
+  let updated = 0
 
   for (const ex of exercises) {
-    const record = await pb.collection('exercise_library').create({
+    const data = {
       name: ex.name,
       muscle_groups: ex.muscle_groups,
       equipment: ex.equipment,
@@ -280,10 +276,21 @@ async function seedExercises(): Promise<Record<string, string>> {
       notes: ex.notes,
       youtube_url: ex.youtube_url,
       archived: false,
-    })
-    exerciseIdMap[ex.name] = record.id
+    }
+
+    const found = existingByName.get(ex.name)
+    if (found) {
+      // Update existing record (picks up new notes, muscle groups, etc.)
+      await pb.collection('exercise_library').update(found.id, data)
+      exerciseIdMap[ex.name] = found.id
+      updated++
+    } else {
+      const record = await pb.collection('exercise_library').create(data)
+      exerciseIdMap[ex.name] = record.id
+      created++
+    }
   }
-  console.log(`Seeded ${exercises.length} exercises`)
+  console.log(`Exercises: ${created} created, ${updated} updated`)
   return exerciseIdMap
 }
 

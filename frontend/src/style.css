@@ -7,13 +7,13 @@
    ─────────────────────────────────────────────────────────────────────────── */
 @theme {
   /* Surfaces – light mode defaults */
-  --color-surface:         rgb(246 246 252);
-  --color-surface-light:   rgb(238 237 252);
+  --color-surface:         rgb(248 250 252);
+  --color-surface-light:   rgb(241 245 249);
   --color-surface-lighter: rgb(255 255 255);
 
-  /* Accent */
-  --color-accent:       rgb(102  84 232);
-  --color-accent-light: rgb(139 124 248);
+  /* Accent – blue */
+  --color-accent:       rgb( 37  99 235);
+  --color-accent-light: rgb( 59 130 246);
 
   /* Semantic */
   --color-success: rgb(  5 150 105);
@@ -44,8 +44,8 @@
   --color-surface:         rgb( 14  13  20);
   --color-surface-light:   rgb( 22  21  32);
   --color-surface-lighter: rgb( 30  29  45);
-  --color-accent:          rgb(139 124 248);
-  --color-accent-light:    rgb(168 158 248);
+  --color-accent:          rgb( 96 165 250);
+  --color-accent-light:    rgb(147 197 253);
   --color-success: rgb( 52 211 153);
   --color-warning: rgb(251 191  36);
 
@@ -62,15 +62,15 @@
 
 /* ── Chart hex aliases (canvas API can't use CSS-variable rgb channels) ───── */
 :root {
-  --chart-grid:   #e8e7f8;
-  --chart-accent: #6654e8;
+  --chart-grid:   #e5e7eb;
+  --chart-accent: #2563eb;
   --chart-raw:    #059669;
   --chart-text:   #71717a;
   color-scheme: light;
 }
 .dark {
-  --chart-grid:   #1e1d2d;
-  --chart-accent: #8b7cf8;
+  --chart-grid:   #1e293b;
+  --chart-accent: #60a5fa;
   --chart-raw:    #34d399;
   --chart-text:   #71717a;
   color-scheme: dark;

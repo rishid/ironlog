@@ -85,7 +85,7 @@ tasks:
   # --- Data ---
 
   seed:
-    desc: Run migration and seed script against PocketBase
+    desc: Run migration and seed script against PocketBase (updates exercises in-place)
     dir: frontend
     deps: [install]
     env:
@@ -94,6 +94,13 @@ tasks:
       PB_ADMIN_PASSWORD: "{{.PB_ADMIN_PASSWORD}}"
     cmds:
       - npx tsx src/lib/migrate.ts
+
+  reseed:
+    desc: Wipe pb_data and re-seed everything from scratch
+    prompt: This will DELETE all workout history. Continue?
+    cmds:
+      - rm -rf pb_data
+      - task: start
 
   # --- Docker ---
 
@@ -116,6 +123,29 @@ tasks:
     desc: Tail container logs
     cmds:
       - docker compose logs -f
+
+  # --- Full Stack ---
+
+  start:
+    desc: Seed database and start dev environment (PocketBase :8090 + Vite dev server)
+    cmds:
+      - task: pb:setup
+      - |
+        # Start PocketBase in background
+        ./bin/pocketbase serve --http=0.0.0.0:8090 > /tmp/pocketbase.log 2>&1 &
+        PB_PID=$!
+
+        # Wait for it to start and seed database
+        sleep 2
+        task seed || { kill $PB_PID; exit 1; }
+
+        # Start Vite dev server (foreground)
+        echo ""
+        echo "✓ Database seeded. PocketBase running on http://localhost:8090"
+        echo "✓ Starting Vite dev server on http://localhost:5173"
+        echo ""
+        trap "kill $PB_PID" EXIT
+        cd frontend && npm run dev
 
   # --- CI ---
 

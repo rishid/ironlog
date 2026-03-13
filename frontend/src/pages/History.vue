@@ -110,14 +110,7 @@ function getDayDot(day: number): string | null {
   const dateKey = `${year}-${month}-${dayStr}`
   const info = sessionDates.value.get(dateKey)
   if (!info) return null
-
-  switch (info.type) {
-    case 'strength': return 'bg-blue-400'
-    case 'cardio': return 'bg-green-400'
-    case 'recovery': return 'bg-purple-400'
-    case 'mixed': return 'bg-yellow-400'
-    default: return 'bg-gray-400'
-  }
+  return 'bg-accent'
 }
 
 function formatDate(dateStr: string): string {
@@ -175,12 +168,6 @@ watch(activePersonId, loadSessions)
         </div>
       </div>
 
-      <div class="flex items-center gap-3 mt-3 text-[10px] text-gray-500">
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400"></span> Strength</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400"></span> Cardio</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-400"></span> Recovery</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-400"></span> Mixed</span>
-      </div>
     </div>
 
     <!-- Session list -->
@@ -234,8 +221,6 @@ watch(activePersonId, loadSessions)
               <div>
                 <p class="text-sm font-medium">
                   {{ ex.expand?.exercise?.name || 'Exercise' }}
-                  <span v-if="ex.is_anchor" class="text-[10px] text-accent ml-1">Anchor</span>
-                  <span v-if="ex.is_finisher" class="text-[10px] text-amber-400 ml-1">Finisher</span>
                 </p>
                 <p class="text-xs text-gray-500">{{ formatSetsSummary(ex.sets_data) }}</p>
               </div>

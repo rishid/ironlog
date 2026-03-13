@@ -77,6 +77,13 @@ function formatDate(dateStr: string): string {
   if (days < 7) return `${days} days ago`
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+function formatDateTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  const dateStr2 = formatDate(dateStr)
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return `${dateStr2} at ${time}`
+}
 </script>
 
 <template>
@@ -200,7 +207,7 @@ function formatDate(dateStr: string): string {
                 {{ (lastSession as any).expand?.program_session?.name || 'Workout' }}
               </h3>
               <p class="text-sm text-gray-400">
-                {{ formatDate(lastSession.date) }}
+                {{ formatDateTime(lastSession.date) }}
                 <span v-if="lastSession.duration_minutes"> · {{ lastSession.duration_minutes }} min</span>
               </p>
             </div>

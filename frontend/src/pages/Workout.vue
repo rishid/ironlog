@@ -29,6 +29,9 @@ let timerInterval: ReturnType<typeof setInterval> | null = null
 // Exercise pool for rest seconds lookup
 const poolMap = ref<Map<string, ExercisePoolExpanded>>(new Map())
 
+// Refs to ExerciseCard components
+const exerciseCardRefs = ref<InstanceType<typeof ExerciseCard>[]>([])
+
 onMounted(async () => {
   const sessionId = route.query.sessionId as string
   if (sessionId && !isActive.value) {
@@ -104,9 +107,33 @@ function onAddSet(exerciseIndex: number) {
 }
 
 function onSkipSet(exerciseIndex: number, setIndex: number) {
-  const set = exercises.value[exerciseIndex]?.sets_data[setIndex]
+  const exercise = exercises.value[exerciseIndex]
+  if (!exercise) return
+
+  const set = exercise.sets_data[setIndex]
   if (!set) return
-  sessionStore.updateSetData(exerciseIndex, setIndex, { skipped: !set.skipped })
+
+  if (set.skipped) {
+    // Unskip just this set
+    sessionStore.updateSetData(exerciseIndex, setIndex, { skipped: false })
+    return
+  }
+
+  // Skip this set and all remaining uncompleted sets
+  for (let i = setIndex; i < exercise.sets_data.length; i++) {
+    const s = exercise.sets_data[i]
+    if (!s.completed) {
+      sessionStore.updateSetData(exerciseIndex, i, { skipped: true })
+    }
+  }
+
+  // Collapse the card — find the right ref among regular exercises
+  const regIdx = regularExercises.value.indexOf(exercise)
+  if (regIdx >= 0 && exerciseCardRefs.value[regIdx]) {
+    exerciseCardRefs.value[regIdx].collapse()
+  }
+
+  saveExerciseData(exerciseIndex)
 }
 
 async function onSwap(exerciseIndex: number) {
@@ -143,12 +170,52 @@ const finisherExercises = computed(() =>
   exercises.value.filter((e) => e.is_finisher)
 )
 
-// Show the workout page heading
+// Session name
 const sessionName = computed(() => programSession.value?.name || activeSession.value?.expand?.program_session?.name || 'Workout')
+
+// Derive muscle groups from exercises for subtitle
+const muscleGroupSubtitle = computed(() => {
+  const groups = new Set<string>()
+  for (const ex of regularExercises.value) {
+    const info = (ex as any).expand?.exercise
+    if (info?.muscle_groups) {
+      for (const mg of info.muscle_groups) {
+        groups.add(mg)
+      }
+    }
+  }
+  if (groups.size === 0) return ''
+  // Capitalize and join the top muscle groups
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  return Array.from(groups).slice(0, 4).map(capitalize).join(' / ')
+})
+
+// Progress tracking
+const totalExercises = computed(() => exercises.value.length)
+const completedExercises = computed(() =>
+  exercises.value.filter(e => {
+    const sets = e.sets_data
+    return sets.length > 0 && sets.every(s => s.completed || s.skipped)
+  }).length
+)
+const progressPercent = computed(() => {
+  if (totalExercises.value === 0) return 0
+  return (completedExercises.value / totalExercises.value) * 100
+})
+
+// Warmup suggestion based on session type
+const warmupText = computed(() => {
+  const type = programSession.value?.session_type
+  if (type === 'cardio') return '3 min easy movement + dynamic stretches'
+  if (type === 'recovery') return '5 min easy walking or light bike'
+  return '5 min jump rope at moderate pace'
+})
+
+const warmupDismissed = ref(false)
 </script>
 
 <template>
-  <div class="p-4 max-w-2xl mx-auto">
+  <div class="p-4 max-w-2xl mx-auto pb-32">
     <!-- PR Banner -->
     <PRBanner
       v-if="prAlert"
@@ -176,12 +243,11 @@ const sessionName = computed(() => programSession.value?.name || activeSession.v
     <!-- Active session -->
     <template v-else>
       <!-- Session header -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-start justify-between mb-2">
         <div>
-          <h1 class="text-xl font-bold">{{ sessionName }}</h1>
-          <p class="text-sm text-gray-400">
-            {{ activePerson?.name }} · {{ elapsedTimer || '0:00' }}
-          </p>
+          <h1 class="text-xl font-bold">
+            {{ sessionName }}<span v-if="muscleGroupSubtitle" class="font-normal text-gray-400"> — {{ muscleGroupSubtitle }}</span>
+          </h1>
         </div>
         <button
           @click="onFinish"
@@ -192,12 +258,56 @@ const sessionName = computed(() => programSession.value?.name || activeSession.v
         </button>
       </div>
 
+      <!-- Timer + progress -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between text-sm mb-2">
+          <span class="text-gray-400">{{ activePerson?.name }} · <span class="text-accent font-mono font-semibold">{{ elapsedTimer || '0:00' }}</span></span>
+          <span class="font-semibold" :class="progressPercent >= 100 ? 'text-success' : 'text-accent'">{{ completedExercises }}/{{ totalExercises }} exercises</span>
+        </div>
+        <!-- Progress bar -->
+        <div class="w-full h-2 bg-surface-light rounded-full overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-500 ease-out"
+            :class="progressPercent >= 100 ? 'bg-success' : 'bg-accent'"
+            :style="{ width: `${progressPercent}%` }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Warmup callout -->
+      <div
+        class="rounded-xl p-4 mb-4 flex items-center justify-between border transition-colors"
+        :class="warmupDismissed
+          ? 'bg-success/5 border-success/20'
+          : 'bg-surface-lighter border-gray-700/50'"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🔥</span>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">Warm-up</p>
+            <p class="text-sm font-medium" :class="warmupDismissed ? 'text-success/70' : ''">{{ warmupText }}</p>
+          </div>
+        </div>
+        <button
+          @click="warmupDismissed = !warmupDismissed"
+          class="w-11 h-11 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+          :class="warmupDismissed
+            ? 'bg-success/20 text-success'
+            : 'bg-surface-light text-gray-500 hover:text-success hover:bg-success/10'"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      </div>
+
       <!-- Exercise list -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <!-- Regular exercises (anchors + fills) -->
         <ExerciseCard
           v-for="(exercise, i) in regularExercises"
           :key="exercise.id"
+          :ref="(el: any) => { if (el) exerciseCardRefs[i] = el }"
           :exercise="exercise as any"
           :exercise-index="exercises.indexOf(exercise)"
           :pool-entry="poolMap.get((exercise as any).exercise)"
@@ -209,15 +319,21 @@ const sessionName = computed(() => programSession.value?.name || activeSession.v
           @swap="onSwap"
         />
 
-        <!-- Finisher block -->
-        <div v-if="finisherExercises.length > 0" class="space-y-3">
-          <FinisherBlock
-            v-for="(exercise, i) in finisherExercises"
-            :key="exercise.id"
-            :exercise-name="(exercise as any).expand?.exercise?.name || 'Finisher'"
-            :completed="exercise.sets_data.every(s => s.completed)"
-            @toggle="(completed) => onFinisherToggle(exercises.indexOf(exercise), completed)"
-          />
+        <!-- Finishers -->
+        <div v-if="finisherExercises.length > 0">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 mt-6">Finishers</p>
+          <div class="space-y-2">
+            <FinisherBlock
+              v-for="(exercise, i) in finisherExercises"
+              :key="exercise.id"
+              :exercise-name="(exercise as any).expand?.exercise?.name || 'Finisher'"
+              :notes="(exercise as any).expand?.exercise?.notes || ''"
+              :rep-min="poolMap.get((exercise as any).exercise)?.rep_min || 1"
+              :rep-max="poolMap.get((exercise as any).exercise)?.rep_max || 1"
+              :completed="exercise.sets_data.every(s => s.completed)"
+              @toggle="(completed) => onFinisherToggle(exercises.indexOf(exercise), completed)"
+            />
+          </div>
         </div>
       </div>
 

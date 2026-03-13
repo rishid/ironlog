@@ -22,21 +22,6 @@ const expanded = ref(true)
 
 const exerciseInfo = computed(() => props.exercise.expand?.exercise)
 
-const muscleGroupColors: Record<string, string> = {
-  chest:      'bg-rose-500/20 text-rose-300',
-  back:       'bg-sky-500/20 text-sky-300',
-  shoulders:  'bg-amber-500/20 text-amber-300',
-  biceps:     'bg-emerald-500/20 text-emerald-300',
-  triceps:    'bg-orange-500/20 text-orange-300',
-  quads:      'bg-violet-500/20 text-violet-300',
-  hamstrings: 'bg-pink-500/20 text-pink-300',
-  glutes:     'bg-fuchsia-500/20 text-fuchsia-300',
-  core:       'bg-cyan-500/20 text-cyan-300',
-  calves:     'bg-teal-500/20 text-teal-300',
-  forearms:   'bg-lime-500/20 text-lime-300',
-  traps:      'bg-indigo-500/20 text-indigo-300',
-}
-
 // Header summary: "4×8–10" or "4×10"
 const setRepSummary = computed(() => {
   const count = props.exercise.sets_data.length
@@ -51,8 +36,14 @@ const setRepSummary = computed(() => {
 
 const restLabel = computed(() => {
   const secs = props.poolEntry?.rest_seconds
-  if (!secs) return null
-  return secs >= 60 ? `rest ${secs / 60}min` : `rest ${secs}s`
+  if (!secs) {
+    // Derive from exercise type
+    const type = exerciseInfo.value?.type
+    if (type === 'cardio') return 'rest 60s'
+    if (type === 'core') return 'rest 45s'
+    return 'rest 90s'
+  }
+  return secs >= 60 ? `rest ${Math.floor(secs / 60)}min` : `rest ${secs}s`
 })
 
 const completedCount = computed(() =>
@@ -61,6 +52,17 @@ const completedCount = computed(() =>
 const activeCount = computed(() =>
   props.exercise.sets_data.filter((s) => !s.skipped).length
 )
+
+const allDone = computed(() => {
+  const sets = props.exercise.sets_data
+  return sets.length > 0 && sets.every(s => s.completed || s.skipped)
+})
+
+function collapse() {
+  expanded.value = false
+}
+
+defineExpose({ collapse })
 
 function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
   emit('updateSet', props.exerciseIndex, setIndex, data)
@@ -78,45 +80,43 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
 </script>
 
 <template>
-  <div class="bg-surface-lighter rounded-xl overflow-hidden">
+  <div
+    class="rounded-xl overflow-hidden transition-colors border-l-4"
+    :class="allDone
+      ? 'bg-success/5 border-l-success/60'
+      : 'bg-surface-lighter border-l-accent/40'"
+  >
     <!-- Header -->
     <button
       @click="expanded = !expanded"
       class="w-full flex items-start justify-between p-4 text-left min-h-[44px]"
     >
       <div class="flex-1 min-w-0">
-        <!-- Name + anchor badge -->
-        <div class="flex items-center gap-2">
-          <h3 class="font-semibold text-base leading-tight">{{ exerciseInfo?.name || 'Exercise' }}</h3>
-          <span
-            v-if="exercise.is_anchor"
-            class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-accent/20 text-accent flex-shrink-0"
-          >
-            Anchor
-          </span>
-        </div>
-        <!-- Notes -->
+        <h3
+          class="font-bold text-base leading-tight"
+          :class="allDone ? 'text-success/70' : 'text-gray-100'"
+        >
+          {{ exerciseInfo?.name || 'Exercise' }}
+        </h3>
         <p v-if="exerciseInfo?.notes" class="text-xs text-gray-400 italic mt-0.5">
           {{ exerciseInfo.notes }}
         </p>
-        <!-- Muscle group tags -->
-        <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-          <span
-            v-for="mg in (exerciseInfo?.muscle_groups || []).slice(0, 3)"
-            :key="mg"
-            class="text-[10px] font-medium px-1.5 py-0.5 rounded"
-            :class="muscleGroupColors[mg] || 'bg-gray-500/20 text-gray-300'"
-          >
-            {{ mg }}
-          </span>
-        </div>
       </div>
 
-      <!-- Right: sets×reps + rest + progress -->
+      <!-- Right: progress + sets×reps + rest + chevron -->
       <div class="flex flex-col items-end gap-0.5 ml-3 flex-shrink-0">
-        <span class="text-sm font-semibold text-accent">{{ setRepSummary }}</span>
-        <span v-if="restLabel" class="text-xs text-gray-500">{{ restLabel }}</span>
-        <span class="text-xs text-gray-500 mt-0.5">{{ completedCount }}/{{ activeCount }}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500">{{ completedCount }}/{{ activeCount }}</span>
+          <span class="text-sm font-bold text-accent">{{ setRepSummary }}</span>
+          <svg
+            class="w-4 h-4 text-gray-500 transition-transform"
+            :class="expanded ? 'rotate-180' : ''"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <span class="text-[11px] text-gray-600">{{ restLabel }}</span>
       </div>
     </button>
 
