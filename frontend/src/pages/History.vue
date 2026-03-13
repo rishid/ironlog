@@ -147,11 +147,11 @@ watch(activePersonId, loadSessions)
     <!-- Calendar -->
     <div class="bg-surface-lighter rounded-xl p-4 mb-6">
       <div class="flex items-center justify-between mb-4">
-        <button @click="prevMonth" class="p-2 text-gray-400 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center">
+        <button @click="prevMonth" class="p-2 text-gray-400 hover:text-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <h3 class="font-medium">{{ monthLabel }}</h3>
-        <button @click="nextMonth" class="p-2 text-gray-400 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center">
+        <button @click="nextMonth" class="p-2 text-gray-400 hover:text-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
       </div>

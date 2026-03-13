@@ -110,7 +110,7 @@ onMounted(loadExercises)
         :key="tab"
         @click="activeTab = tab"
         class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors capitalize min-h-[44px]"
-        :class="activeTab === tab ? 'bg-accent text-white' : 'text-gray-400 hover:text-white'"
+        :class="activeTab === tab ? 'bg-accent text-white' : 'text-gray-400 hover:text-gray-100'"
       >
         {{ tab === 'library' ? 'Exercises' : tab }}
       </button>

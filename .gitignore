@@ -3,6 +3,7 @@ dist/
 pb_data/
 pb_public/
 bin/
+.task/
 .env
 *.local
 .DS_Store

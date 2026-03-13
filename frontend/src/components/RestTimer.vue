@@ -62,7 +62,7 @@ const dashOffset = computed(() => {
       <div class="flex items-center gap-2">
         <button
           @click="sessionStore.addRestTime(30)"
-          class="px-3 py-2 text-sm bg-surface-lighter rounded-lg text-gray-300 hover:text-white min-h-[44px]"
+          class="px-3 py-2 text-sm bg-surface-lighter rounded-lg text-gray-300 hover:text-gray-100 min-h-[44px]"
         >
           +30s
         </button>

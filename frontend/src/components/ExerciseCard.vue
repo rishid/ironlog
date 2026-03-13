@@ -129,7 +129,7 @@ const totalSets = computed(() => props.exercise.sets_data.length)
       <div class="flex items-center gap-2 mt-3">
         <button
           @click="emit('addSet', exerciseIndex)"
-          class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-surface-light transition-colors min-h-[44px]"
+          class="text-sm text-gray-400 hover:text-gray-100 px-3 py-2 rounded-lg hover:bg-surface-light transition-colors min-h-[44px]"
         >
           + Add Set
         </button>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import type { WeightEntry } from '../types'
 
 const props = defineProps<{
@@ -52,8 +52,10 @@ function drawChart() {
     return padding.top + (1 - (weight - minW) / rangeW) * chartH
   }
 
+  const colors = getChartColors()
+
   // Grid lines
-  ctx.strokeStyle = '#30304a'
+  ctx.strokeStyle = colors.grid
   ctx.lineWidth = 1
   const yTicks = 5
   for (let i = 0; i <= yTicks; i++) {
@@ -65,7 +67,7 @@ function drawChart() {
 
     // Y labels
     const val = maxW - (i / yTicks) * rangeW
-    ctx.fillStyle = '#6b7280'
+    ctx.fillStyle = colors.text
     ctx.font = '10px system-ui'
     ctx.textAlign = 'right'
     ctx.fillText(val.toFixed(0), padding.left - 5, y + 3)
@@ -84,7 +86,7 @@ function drawChart() {
       avgData.push({ date: dates[i], avg })
     }
 
-    ctx.strokeStyle = '#e94560'
+    ctx.strokeStyle = colors.accent
     ctx.lineWidth = 2
     ctx.setLineDash([])
     ctx.beginPath()
@@ -98,7 +100,7 @@ function drawChart() {
   }
 
   // Raw data line
-  ctx.strokeStyle = '#4ade80'
+  ctx.strokeStyle = colors.raw
   ctx.lineWidth = 1.5
   ctx.setLineDash([])
   ctx.beginPath()
@@ -116,12 +118,12 @@ function drawChart() {
     const y = yPos(weights[i])
     ctx.beginPath()
     ctx.arc(x, y, 3, 0, Math.PI * 2)
-    ctx.fillStyle = '#4ade80'
+    ctx.fillStyle = colors.raw
     ctx.fill()
   })
 
   // Date labels
-  ctx.fillStyle = '#6b7280'
+  ctx.fillStyle = colors.text
   ctx.font = '10px system-ui'
   ctx.textAlign = 'center'
   const labelCount = Math.min(5, dates.length)
@@ -136,10 +138,24 @@ function drawChart() {
   }
 }
 
+function getChartColors() {
+  const s = getComputedStyle(document.documentElement)
+  return {
+    grid:    s.getPropertyValue('--chart-grid').trim()    || '#1e1d2d',
+    accent:  s.getPropertyValue('--chart-accent').trim()  || '#8b7cf8',
+    raw:     s.getPropertyValue('--chart-raw').trim()     || '#34d399',
+    text:    s.getPropertyValue('--chart-text').trim()    || '#71717a',
+  }
+}
+
 watch(() => props.entries, drawChart, { deep: true })
 onMounted(() => {
   setTimeout(drawChart, 50)
   window.addEventListener('resize', drawChart)
+  // Re-draw when theme class changes
+  const observer = new MutationObserver(() => setTimeout(drawChart, 20))
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  onUnmounted(() => observer.disconnect())
 })
 </script>
 
