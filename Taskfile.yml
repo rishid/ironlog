@@ -147,6 +147,11 @@ tasks:
         trap "kill $PB_PID" EXIT
         cd frontend && npm run dev
 
+  tunnel:
+    desc: Expose Vite dev server to the internet via Cloudflare tunnel
+    cmds:
+      - cloudflared tunnel --url http://localhost:5173
+
   # --- CI ---
 
   ci:
