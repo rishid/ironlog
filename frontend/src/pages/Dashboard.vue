@@ -42,6 +42,48 @@ const weightInput = ref('')
 const showWeightInput = ref(false)
 const savingWeight = ref(false)
 
+// Quick log modal
+const showQuickLog = ref(false)
+const quickLogLabel = ref('')
+const quickLogDuration = ref('')
+const quickLogNotes = ref('')
+const quickLogDate = ref(new Date().toISOString().split('T')[0])
+const savingQuickLog = ref(false)
+
+function quickLogDateAsISO(): string {
+  const today = new Date().toISOString().split('T')[0]
+  if (quickLogDate.value === today) {
+    return new Date().toISOString()
+  }
+  // Previous day: use noon to avoid timezone issues
+  return `${quickLogDate.value}T12:00:00.000Z`
+}
+
+async function saveQuickLog() {
+  if (!quickLogLabel.value.trim() || !activePersonId.value) return
+  savingQuickLog.value = true
+  try {
+    await pb.collection('workout_sessions').create({
+      person: activePersonId.value,
+      date: quickLogDateAsISO(),
+      completed: true,
+      duration_minutes: quickLogDuration.value ? parseInt(quickLogDuration.value) : null,
+      notes: quickLogNotes.value.trim() || null,
+      template_snapshot: { freeform_label: quickLogLabel.value.trim() },
+    })
+    showQuickLog.value = false
+    quickLogLabel.value = ''
+    quickLogDuration.value = ''
+    quickLogNotes.value = ''
+    quickLogDate.value = new Date().toISOString().split('T')[0]
+    loadDashboardData()
+  } catch (e) {
+    console.error('Failed to save quick log:', e)
+  } finally {
+    savingQuickLog.value = false
+  }
+}
+
 function onSessionSelect(session: ProgramSession) {
   router.push({ path: '/workout', query: { sessionId: session.id } })
 }
@@ -109,6 +151,14 @@ function formatDateTime(dateStr: string): string {
         :sessions="sessions"
         @select="onSessionSelect"
       />
+
+      <!-- Quick log button -->
+      <button
+        @click="showQuickLog = true"
+        class="w-full mt-3 py-2.5 rounded-xl text-sm text-gray-400 border border-gray-700/50 hover:border-gray-600 hover:text-gray-300 transition-colors"
+      >
+        + Log a free workout (YouTube, class, etc.)
+      </button>
 
       <!-- Stats row -->
       <div class="grid grid-cols-2 gap-3 mt-6">
@@ -227,5 +277,83 @@ function formatDateTime(dateStr: string): string {
         <p class="text-sm text-gray-500 mt-1">Run the seed script to set up exercises and programs.</p>
       </div>
     </template>
+
+    <!-- Quick Log Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showQuickLog"
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        @click.self="showQuickLog = false"
+      >
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showQuickLog = false; quickLogDate = new Date().toISOString().split('T')[0]"></div>
+        <div class="relative w-full max-w-md bg-surface rounded-t-2xl sm:rounded-2xl p-6 shadow-xl">
+          <h2 class="text-lg font-bold mb-4">Log Free Workout</h2>
+
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1">What did you do? <span class="text-red-400">*</span></label>
+              <input
+                v-model="quickLogLabel"
+                type="text"
+                placeholder="e.g. ATHLEAN-X Full Body, Yoga Flow, Bike ride"
+                class="w-full bg-surface-lighter border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-accent focus:outline-none"
+                autofocus
+              />
+            </div>
+
+            <div class="flex gap-3">
+              <div class="flex-1">
+                <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1">Date</label>
+                <input
+                  v-model="quickLogDate"
+                  type="date"
+                  :max="new Date().toISOString().split('T')[0]"
+                  class="w-full bg-surface-lighter border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1">Duration</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model="quickLogDuration"
+                    type="number"
+                    inputmode="numeric"
+                    placeholder="45"
+                    class="w-20 bg-surface-lighter border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-accent focus:outline-none"
+                  />
+                  <span class="text-sm text-gray-500">min</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-gray-400 uppercase tracking-wider block mb-1">Notes (optional)</label>
+              <textarea
+                v-model="quickLogNotes"
+                placeholder="How did it feel? Any details worth noting..."
+                rows="2"
+                class="w-full bg-surface-lighter border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-accent focus:outline-none resize-none"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-5">
+            <button
+              @click="showQuickLog = false"
+              class="flex-1 py-3 rounded-xl border border-gray-700 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              @click="saveQuickLog"
+              :disabled="!quickLogLabel.trim() || savingQuickLog"
+              class="flex-1 py-3 rounded-xl bg-accent text-white font-semibold text-sm disabled:opacity-40 transition-opacity"
+            >
+              {{ savingQuickLog ? 'Saving...' : 'Log Workout' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

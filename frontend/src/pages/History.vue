@@ -103,22 +103,19 @@ function nextMonth() {
   currentMonth.value = d
 }
 
-function getDayDot(day: number): string | null {
+function getDayCount(day: number): number {
   const year = currentMonth.value.getFullYear()
   const month = (currentMonth.value.getMonth() + 1).toString().padStart(2, '0')
   const dayStr = day.toString().padStart(2, '0')
   const dateKey = `${year}-${month}-${dayStr}`
-  const info = sessionDates.value.get(dateKey)
-  if (!info) return null
-  return 'bg-accent'
+  return sessionDates.value.get(dateKey)?.count ?? 0
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  })
+  const d = new Date(dateStr)
+  const datePart = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return `${datePart} at ${timePart}`
 }
 
 function formatSetsSummary(setsData: any[]): string {
@@ -157,14 +154,21 @@ watch(activePersonId, loadSessions)
         <div
           v-for="(day, i) in calendarDays"
           :key="i"
-          class="aspect-square flex flex-col items-center justify-center text-sm relative"
+          class="flex flex-col items-center justify-center py-1 gap-0.5 min-h-[2.5rem]"
         >
-          <span v-if="day" :class="getDayDot(day) ? 'text-white' : 'text-gray-500'">{{ day }}</span>
           <span
-            v-if="day && getDayDot(day)"
-            class="w-1.5 h-1.5 rounded-full absolute bottom-0.5"
-            :class="getDayDot(day)!"
-          ></span>
+            v-if="day"
+            class="text-sm leading-none"
+            :class="getDayCount(day) > 0 ? 'text-accent font-semibold' : 'text-gray-500'"
+          >{{ day }}</span>
+          <div v-if="day && getDayCount(day) > 0" class="flex gap-0.5">
+            <span
+              v-for="n in Math.min(getDayCount(day), 3)"
+              :key="n"
+              class="w-1 h-1 rounded-full bg-accent"
+            ></span>
+          </div>
+          <div v-else-if="day" class="h-1"></div>
         </div>
       </div>
 
@@ -190,9 +194,15 @@ watch(activePersonId, loadSessions)
           class="w-full p-4 text-left flex items-center justify-between min-h-[44px]"
         >
           <div>
-            <h3 class="font-semibold">
-              {{ session.expand?.program_session?.name || 'Workout' }}
-            </h3>
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold">
+                {{ (session.template_snapshot as any)?.freeform_label || session.expand?.program_session?.name || 'Workout' }}
+              </h3>
+              <span
+                v-if="(session.template_snapshot as any)?.freeform_label"
+                class="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-surface-light px-1.5 py-0.5 rounded"
+              >Free</span>
+            </div>
             <p class="text-sm text-gray-400">
               {{ formatDate(session.date) }}
               <span v-if="session.duration_minutes"> · {{ session.duration_minutes }} min</span>
