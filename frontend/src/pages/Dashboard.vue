@@ -8,7 +8,7 @@ import { usePerson } from '../composables/usePerson'
 import SessionPicker from '../components/SessionPicker.vue'
 import WeightChart from '../components/WeightChart.vue'
 import pb from '../pb'
-import type { ProgramSession, WorkoutSessionExpanded } from '../types'
+import type { ProgramSession, WorkoutSessionExpanded, ExercisePoolExpanded } from '../types'
 
 const router = useRouter()
 const personStore = usePersonStore()
@@ -41,6 +41,32 @@ const lastSession = computed(() => {
 const weightInput = ref('')
 const showWeightInput = ref(false)
 const savingWeight = ref(false)
+
+// Session preview modal
+const previewSession = ref<ProgramSession | null>(null)
+const previewPool = ref<ExercisePoolExpanded[]>([])
+const loadingPreview = ref(false)
+
+async function onPreview(session: ProgramSession) {
+  previewSession.value = session
+  previewPool.value = []
+  loadingPreview.value = true
+  try {
+    previewPool.value = await pb.collection('exercise_pool').getFullList<ExercisePoolExpanded>({
+      filter: `program_session = "${session.id}"`,
+      expand: 'exercise',
+      sort: 'sort_hint',
+    })
+  } catch (e) {
+    console.error('Failed to load preview:', e)
+  } finally {
+    loadingPreview.value = false
+  }
+}
+
+const previewAnchors = computed(() => previewPool.value.filter(p => p.is_anchor && !p.is_finisher))
+const previewPool_ = computed(() => previewPool.value.filter(p => !p.is_anchor && !p.is_finisher))
+const previewFinishers = computed(() => previewPool.value.filter(p => p.is_finisher))
 
 // Quick log modal
 const showQuickLog = ref(false)
@@ -150,6 +176,7 @@ function formatDateTime(dateStr: string): string {
         :suggested-session="suggestedSession"
         :sessions="sessions"
         @select="onSessionSelect"
+        @preview="onPreview"
       />
 
       <!-- Quick log button -->
@@ -277,6 +304,73 @@ function formatDateTime(dateStr: string): string {
         <p class="text-sm text-gray-500 mt-1">Run the seed script to set up exercises and programs.</p>
       </div>
     </template>
+
+    <!-- Session Preview Modal -->
+    <Teleport to="body">
+      <div v-if="previewSession" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="previewSession = null"></div>
+        <div class="relative w-full max-w-md bg-surface rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] flex flex-col">
+          <div class="p-5 border-b border-gray-700/50 flex items-center justify-between flex-shrink-0">
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Session preview</p>
+              <h2 class="text-lg font-bold">{{ previewSession.name }}</h2>
+            </div>
+            <button @click="previewSession = null" class="text-gray-500 hover:text-gray-200 w-10 h-10 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div class="overflow-y-auto p-5 space-y-4">
+            <div v-if="loadingPreview" class="text-center py-8 text-gray-500 text-sm">Loading...</div>
+            <template v-else>
+              <!-- Anchors -->
+              <div v-if="previewAnchors.length">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Always included</p>
+                <div class="space-y-1.5">
+                  <div v-for="p in previewAnchors" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
+                    <span class="text-sm font-medium">{{ p.expand?.exercise?.name }}</span>
+                    <span class="text-xs text-gray-500">{{ p.sets_target }}×{{ p.rep_min }}–{{ p.rep_max }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pool -->
+              <div v-if="previewPool_.length">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">
+                  Random pick · {{ previewSession.target_exercise_count - previewAnchors.length - previewFinishers.length }} of {{ previewPool_.length }} selected
+                </p>
+                <div class="space-y-1.5">
+                  <div v-for="p in previewPool_" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
+                    <span class="text-sm text-gray-300">{{ p.expand?.exercise?.name }}</span>
+                    <span class="text-xs text-gray-500">{{ p.sets_target }}×{{ p.rep_min }}–{{ p.rep_max }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Finishers -->
+              <div v-if="previewFinishers.length">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Finishers</p>
+                <div class="space-y-1.5">
+                  <div v-for="p in previewFinishers" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
+                    <span class="text-sm text-gray-300">{{ p.expand?.exercise?.name }}</span>
+                    <span class="text-xs text-gray-500">{{ p.rep_min }}–{{ p.rep_max }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="p-4 border-t border-gray-700/50 flex-shrink-0">
+            <button
+              @click="onSessionSelect(previewSession!); previewSession = null"
+              class="w-full bg-accent hover:bg-accent-light text-white font-semibold py-3 rounded-xl transition-colors"
+            >
+              Start Workout
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Quick Log Modal -->
     <Teleport to="body">

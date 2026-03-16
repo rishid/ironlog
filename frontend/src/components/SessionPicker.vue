@@ -8,6 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [session: ProgramSession]
+  preview: [session: ProgramSession]
 }>()
 </script>
 
@@ -25,6 +26,12 @@ const emit = defineEmits<{
       <div class="flex items-center gap-4 text-sm text-gray-400 mb-4">
         <span>~{{ suggestedSession.target_duration_minutes }} min</span>
         <span>{{ suggestedSession.target_exercise_count }} exercises</span>
+        <button
+          @click="emit('preview', suggestedSession)"
+          class="text-accent text-sm ml-auto"
+        >
+          See exercises
+        </button>
       </div>
       <button
         @click="emit('select', suggestedSession)"
@@ -38,14 +45,24 @@ const emit = defineEmits<{
     <div v-if="sessions.length > 1">
       <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Or choose a different session</p>
       <div class="space-y-2">
-        <button
+        <div
           v-for="session in sessions.filter(s => s.id !== suggestedSession?.id)"
           :key="session.id"
-          @click="emit('select', session)"
-          class="w-full bg-surface-lighter hover:bg-surface-light border border-gray-700/50 rounded-lg px-4 py-3 text-sm text-left transition-colors min-h-[44px]"
+          class="flex items-center bg-surface-lighter border border-gray-700/50 rounded-lg overflow-hidden"
         >
-          {{ session.name }}
-        </button>
+          <button
+            @click="emit('select', session)"
+            class="flex-1 px-4 py-3 text-sm text-left hover:bg-surface-light transition-colors min-h-[44px]"
+          >
+            {{ session.name }}
+          </button>
+          <button
+            @click="emit('preview', session)"
+            class="px-4 py-3 text-xs text-accent hover:bg-surface-light transition-colors min-h-[44px] border-l border-gray-700/50"
+          >
+            View
+          </button>
+        </div>
       </div>
     </div>
   </div>

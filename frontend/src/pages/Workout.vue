@@ -154,6 +154,15 @@ async function onCompleteSet(exerciseIndex: number, setIndex: number) {
 
   const restSecs = getExerciseRestSeconds(exercise.exercise)
   await completeSet(exerciseIndex, setIndex, activePersonId.value, restSecs)
+
+  // Auto-collapse card if all sets are now done
+  const updated = exercises.value[exerciseIndex]
+  if (updated?.sets_data.every(s => s.completed || s.skipped)) {
+    const regIdx = regularExercises.value.indexOf(updated)
+    if (regIdx >= 0) {
+      setTimeout(() => exerciseCardRefs.value[regIdx]?.collapse(), 600)
+    }
+  }
 }
 
 function onUpdateSet(exerciseIndex: number, setIndex: number, data: Partial<SetData>) {
@@ -236,6 +245,21 @@ async function onFinish() {
   if (!programSession.value || !activePersonId.value) return
   if (!confirm('Finish this workout?')) return
   await finishSession(activePersonId.value, programSession.value)
+  if (timerInterval) clearInterval(timerInterval)
+  releaseWakeLock()
+  router.push('/')
+}
+
+async function onAbandon() {
+  const anyProgress = exercises.value.some(e => e.sets_data.some(s => s.completed))
+  if (anyProgress && !confirm('Abandon this workout? Progress will be lost.')) return
+  // Delete the incomplete session record from PocketBase
+  if (sessionStore.activeSession?.id) {
+    try {
+      await pb.collection('workout_sessions').delete(sessionStore.activeSession.id)
+    } catch { /* best effort */ }
+  }
+  sessionStore.endSession()
   if (timerInterval) clearInterval(timerInterval)
   releaseWakeLock()
   router.push('/')
@@ -326,7 +350,16 @@ const warmupDismissed = ref(false)
       <!-- Sticky header with timer + progress -->
       <div class="sticky top-0 z-30 bg-surface/95 backdrop-blur-sm px-4 pt-4 pb-3 -mx-0">
         <div class="flex items-start justify-between mb-2">
-          <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <button
+              @click="onAbandon"
+              class="text-gray-500 hover:text-gray-300 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-light transition-colors"
+              title="Abandon workout"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
             <h1 class="text-lg font-bold leading-tight truncate">
               {{ sessionName }}<span v-if="muscleGroupSubtitle" class="font-normal text-gray-400 text-sm"> — {{ muscleGroupSubtitle }}</span>
             </h1>

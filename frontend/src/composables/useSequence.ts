@@ -51,6 +51,10 @@ export function useSequence() {
   }
 
   async function advanceCursor(completedSession: ProgramSession) {
+    // May be called from a fresh instance (e.g. useWorkoutSession) — load if needed
+    if (!personProgram.value) {
+      await load()
+    }
     if (!personProgram.value) return
 
     const totalSessions = sessions.value.length
