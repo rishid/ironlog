@@ -296,22 +296,23 @@ async function seedExercises(): Promise<Record<string, string>> {
 
 async function seedPeople(): Promise<Record<string, string>> {
   const personIdMap: Record<string, string> = {}
+  const existing = await pb.collection('people').getFullList()
+  const existingByName = new Map(existing.map(p => [p.name, p]))
 
-  const existing = await pb.collection('people').getList(1, 1)
-  if (existing.totalItems > 0) {
-    const all = await pb.collection('people').getFullList()
-    for (const p of all) {
-      personIdMap[p.name] = p.id
-    }
-    console.log('People already seeded')
-    return personIdMap
-  }
-
+  let created = 0, updated = 0
   for (const p of people) {
-    const record = await pb.collection('people').create(p)
-    personIdMap[p.name] = record.id
+    const found = existingByName.get(p.name)
+    if (found) {
+      await pb.collection('people').update(found.id, p)
+      personIdMap[p.name] = found.id
+      updated++
+    } else {
+      const record = await pb.collection('people').create(p)
+      personIdMap[p.name] = record.id
+      created++
+    }
   }
-  console.log(`Seeded ${people.length} people`)
+  console.log(`People: ${created} created, ${updated} updated`)
   return personIdMap
 }
 
@@ -329,6 +330,17 @@ async function seedProgram(
   if (existing.length > 0) {
     console.log(`Program "${programDef.name}" already exists for ${personName}`)
     return
+  }
+
+  // Deactivate any existing active person_programs for this person
+  const activePPs = await pb.collection('person_programs').getFullList({
+    filter: `person = "${personId}" && active = true`,
+  })
+  for (const pp of activePPs) {
+    await pb.collection('person_programs').update(pp.id, { active: false })
+  }
+  if (activePPs.length > 0) {
+    console.log(`  Deactivated ${activePPs.length} old program(s) for ${personName}`)
   }
 
   // Create program

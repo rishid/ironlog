@@ -65,7 +65,7 @@ PB_URL=http://localhost:8090 PB_ADMIN_EMAIL=admin@ironlog.local PB_ADMIN_PASSWOR
 
 ## Equipment Context
 
-Home gym with: adjustable dumbbells, flat/incline bench, jump box, rowing machine, stationary bike, jump rope, yoga mat. **No barbell, no cable machine, no pull-up bar.**
+Home gym with: adjustable dumbbells, flat/incline bench, jump box, rowing machine, stationary bike, jump rope, yoga mat, pull-up bar. **No barbell, no cable machine.**
 
 All exercises in the seed data are designed for this equipment. When adding exercises, keep this constraint in mind.
 
