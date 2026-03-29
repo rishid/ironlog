@@ -35,12 +35,6 @@ tasks:
     status:
       - test -f bin/pocketbase
 
-  pb:start:
-    desc: Start PocketBase locally on :8090 (with pb_data in project root)
-    deps: [pb:setup]
-    cmds:
-      - ./bin/pocketbase serve --http=0.0.0.0:8090
-
   # --- Development ---
 
   install:
@@ -103,6 +97,22 @@ tasks:
       - task: start
 
   # --- Docker ---
+
+  docker:seed:
+    desc: Seed a deployed IronLog instance with exercises, programs, and people.
+    summary: |
+      Run once after first deploy (after creating the admin account via the PocketBase UI at /_/).
+      Override defaults for production:
+        PB_URL=https://ironlog.yourdomain.com PB_ADMIN_EMAIL=you@example.com PB_ADMIN_PASSWORD=secret task docker:seed
+      Safe to re-run — exercise/program data is idempotent. History is never touched.
+    dir: frontend
+    deps: [install]
+    env:
+      PB_URL: "{{.PB_URL}}"
+      PB_ADMIN_EMAIL: "{{.PB_ADMIN_EMAIL}}"
+      PB_ADMIN_PASSWORD: "{{.PB_ADMIN_PASSWORD}}"
+    cmds:
+      - npx tsx src/lib/migrate.ts
 
   docker:build:
     desc: Build Docker image

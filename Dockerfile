@@ -1,21 +1,25 @@
-# Stage 1: Build Vue frontend
-FROM node:25-alpine@sha256:cf38e1f3c28ac9d81cdc0c51d8220320b3b618780e44ef96a39f76f7dbfef023 AS frontend-build
+# Stage 1: Build Vue frontend + bundle seed script
+FROM node:25-alpine AS frontend-build
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ .
 RUN npm run build
+# Bundle migrate.ts + all imports (pocketbase SDK, seedData) into a single ESM file.
+# The production image only needs Node to run it — no node_modules, no tsx.
+RUN npx esbuild src/lib/migrate.ts --bundle --platform=node --format=esm --outfile=seed.mjs
 
-# Stage 2: PocketBase with built frontend
+# Stage 2: PocketBase with built frontend + self-contained seeding
 FROM alpine:3.23@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS production
-ARG PB_VERSION=0.36.6
+ARG PB_VERSION=0.36.8
 ARG TARGETARCH
 
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \
     unzip \
-    wget
+    wget \
+    nodejs
 
 # Download PocketBase
 RUN wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_${TARGETARCH}.zip" -O /tmp/pb.zip \
@@ -23,9 +27,26 @@ RUN wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VE
     && rm /tmp/pb.zip \
     && chmod +x /pb/pocketbase
 
-# Copy built frontend into PocketBase's public directory
+# Copy built frontend into PocketBase's static file directory
 COPY --from=frontend-build /app/dist /pb/pb_public
+
+# Schema migrations — auto-applied by --automigrate on first boot.
+# Creates all 11 collections. PocketBase skips already-applied migrations on restarts.
+COPY bin/pb_migrations /pb/pb_migrations
+
+# Bundled seed script — runs on every container start via entrypoint.sh.
+# Syncs exercises/programs from the image. Workout history is never touched.
+COPY --from=frontend-build /app/seed.mjs /pb/seed.mjs
+
+# Entrypoint: starts PocketBase, waits for health, upserts admin account, runs seed.
+COPY entrypoint.sh /pb/entrypoint.sh
+RUN chmod +x /pb/entrypoint.sh
+
+# WORKDIR /pb ensures PocketBase resolves pb_data and pb_migrations relative to /pb,
+# matching the volume mount at /pb/pb_data.
+WORKDIR /pb
 
 EXPOSE 8090
 
-ENTRYPOINT ["/pb/pocketbase", "serve", "--http=0.0.0.0:8090"]
+ENTRYPOINT ["/pb/entrypoint.sh"]
+

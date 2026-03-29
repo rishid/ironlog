@@ -14,36 +14,69 @@ A personal workout tracker PWA built with Vue 3 and PocketBase. Designed for a t
 
 ## Quick Start
 
-Requires [go-task](https://taskfile.dev) (`brew install go-task` / `go install github.com/go-task/task/v3/cmd/task@latest`).
+Requires [go-task](https://taskfile.dev) for local development (`brew install go-task`).
 
-### Docker (recommended)
+### Docker (recommended for deployment)
 
-```bash
-task docker:up
+The container is fully self-contained: on every start it seeds exercises and programs automatically. Just mount a volume for persistence and pass two env vars.
+
+**Docker Compose (simplest):**
+
+```yaml
+services:
+  ironlog:
+    image: ghcr.io/OWNER/ironlog:latest
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - pb_data:/pb/pb_data        # persists database across restarts and image updates
+    environment:
+      PB_ADMIN_EMAIL: admin@example.com
+      PB_ADMIN_PASSWORD: changeme
+
+volumes:
+  pb_data:
 ```
 
-Open `http://localhost:8090`. Create an admin account at `http://localhost:8090/_/`.
-
-Then seed the database:
+**docker run (one-liner):**
 
 ```bash
-task seed
+docker run -d \
+  -p 8090:8090 \
+  -v ironlog_data:/pb/pb_data \
+  -e PB_ADMIN_EMAIL=admin@example.com \
+  -e PB_ADMIN_PASSWORD=changeme \
+  ghcr.io/OWNER/ironlog:latest
 ```
+
+**What happens on container start:**
+1. PocketBase starts and auto-applies schema migrations (creates all collections on first boot)
+2. Admin account is created or updated from `PB_ADMIN_EMAIL` / `PB_ADMIN_PASSWORD`
+3. Exercises and programs are synced from the image — idempotent, history is never touched
+4. PocketBase serves on port 8090
+
+**Updating to a new image version:**
+Just pull and restart — the seed runs automatically and picks up any new exercises or program changes from the updated image. Existing workout history is preserved in the mounted volume.
+
+**Access:**
+- App: `http://localhost:8090`
+- PocketBase admin UI: `http://localhost:8090/_/`
 
 ### Local Development
 
 ```bash
-# Terminal 1: Start PocketBase (download from pocketbase.io)
-./pocketbase serve
+# Terminal 1: Start PocketBase
+task pb:start
 
-# Terminal 2: Seed data
+# Terminal 2: Seed data (first time, and after editing seedData.ts)
 task seed
 
-# Terminal 3: Start Vite dev server
+# Terminal 3: Start Vite dev server (hot reload)
 task dev
 ```
 
-Open `http://localhost:5173`. The Vite dev server proxies API calls to PocketBase on port 8090.
+Open `http://localhost:5173`.
 
 ### Available Tasks
 
@@ -51,11 +84,10 @@ Open `http://localhost:5173`. The Vite dev server proxies API calls to PocketBas
 task dev           Start Vite dev server
 task build         Typecheck + build frontend
 task typecheck     Run vue-tsc type checking
-task seed          Migrate & seed PocketBase
+task seed          Migrate & seed local PocketBase (safe to re-run)
 task docker:build  Build Docker image
-task docker:up     Start containers
+task docker:up     Start with docker compose
 task docker:down   Stop containers
-task docker:logs   Tail container logs
 task ci            Run all CI checks
 ```
 
