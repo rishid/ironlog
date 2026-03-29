@@ -7,11 +7,12 @@ import { storeToRefs } from 'pinia'
 import { useWorkoutSession } from '../composables/useSession'
 import { getRestSeconds } from '../composables/useProgression'
 import ExerciseCard from '../components/ExerciseCard.vue'
+import SupersetCard from '../components/SupersetCard.vue'
 import FinisherBlock from '../components/FinisherBlock.vue'
 import RestTimer from '../components/RestTimer.vue'
 import PRBanner from '../components/PRBanner.vue'
 import pb from '../pb'
-import type { ProgramSession, ExercisePoolExpanded, SetData } from '../types'
+import type { ProgramSession, ExercisePoolExpanded, SessionExercise, SetData } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,8 +30,23 @@ let timerInterval: ReturnType<typeof setInterval> | null = null
 // Exercise pool for rest seconds lookup
 const poolMap = ref<Map<string, ExercisePoolExpanded>>(new Map())
 
-// Refs to ExerciseCard components
-const exerciseCardRefs = ref<InstanceType<typeof ExerciseCard>[]>([])
+// Refs to ExerciseCard and SupersetCard components (keyed by exercise.id / superset groupId)
+const singleCardRefs = ref(new Map<string, InstanceType<typeof ExerciseCard>>())
+const supersetCardRefs = ref(new Map<number, InstanceType<typeof SupersetCard>>())
+
+function setSingleRef(exerciseId: string, el: any) {
+  if (el) singleCardRefs.value.set(exerciseId, el)
+  else singleCardRefs.value.delete(exerciseId)
+}
+function setSupersetRef(groupId: number, el: any) {
+  if (el) supersetCardRefs.value.set(groupId, el)
+  else supersetCardRefs.value.delete(groupId)
+}
+function collapseExercise(exercise: SessionExercise) {
+  const sg = (exercise as any).superset_group as number | null
+  if (sg != null) supersetCardRefs.value.get(sg)?.collapseExercise(exercise.id)
+  else singleCardRefs.value.get(exercise.id)?.collapse()
+}
 
 // Wake Lock to keep screen on
 let wakeLock: WakeLockSentinel | null = null
@@ -158,10 +174,7 @@ async function onCompleteSet(exerciseIndex: number, setIndex: number) {
   // Auto-collapse card if all sets are now done
   const updated = exercises.value[exerciseIndex]
   if (updated?.sets_data.every(s => s.completed || s.skipped)) {
-    const regIdx = regularExercises.value.indexOf(updated)
-    if (regIdx >= 0) {
-      setTimeout(() => exerciseCardRefs.value[regIdx]?.collapse(), 600)
-    }
+    setTimeout(() => collapseExercise(updated), 600)
   }
 }
 
@@ -195,10 +208,7 @@ function onSkipSet(exerciseIndex: number, setIndex: number) {
   }
 
   // Collapse the card
-  const regIdx = regularExercises.value.indexOf(exercise)
-  if (regIdx >= 0 && exerciseCardRefs.value[regIdx]) {
-    exerciseCardRefs.value[regIdx].collapse()
-  }
+  collapseExercise(exercise)
 
   saveExerciseData(exerciseIndex)
 }
@@ -271,6 +281,32 @@ const regularExercises = computed(() =>
 const finisherExercises = computed(() =>
   exercises.value.filter((e) => e.is_finisher)
 )
+
+interface SingleGroup { type: 'single'; exercise: SessionExercise; exerciseIndex: number }
+interface SuperGroup { type: 'superset'; groupId: number; exercises: SessionExercise[]; exerciseIndices: number[] }
+type RenderGroup = SingleGroup | SuperGroup
+
+const exerciseGroups = computed<RenderGroup[]>(() => {
+  const result: RenderGroup[] = []
+  const emitted = new Set<number>()
+
+  for (const exercise of regularExercises.value) {
+    const sg = (exercise as any).superset_group as number | null
+    const idx = exercises.value.indexOf(exercise)
+
+    if (sg != null) {
+      if (emitted.has(sg)) continue
+      emitted.add(sg)
+      const groupExercises = regularExercises.value.filter(e => (e as any).superset_group === sg)
+      const groupIndices = groupExercises.map(e => exercises.value.indexOf(e))
+      result.push({ type: 'superset', groupId: sg, exercises: groupExercises, exerciseIndices: groupIndices })
+    } else {
+      result.push({ type: 'single', exercise, exerciseIndex: idx })
+    }
+  }
+
+  return result
+})
 
 // Session name
 const sessionName = computed(() => programSession.value?.name || activeSession.value?.expand?.program_session?.name || 'Workout')
@@ -417,21 +453,33 @@ const warmupDismissed = ref(false)
 
         <!-- Exercise list -->
         <div class="space-y-3">
-          <!-- Regular exercises (anchors + fills) -->
-          <ExerciseCard
-            v-for="(exercise, i) in regularExercises"
-            :key="exercise.id"
-            :ref="(el: any) => { if (el) exerciseCardRefs[i] = el }"
-            :exercise="exercise as any"
-            :exercise-index="exercises.indexOf(exercise)"
-            :pool-entry="poolMap.get((exercise as any).exercise)"
-            :can-swap="!exercise.is_anchor"
-            @update-set="onUpdateSet"
-            @complete-set="onCompleteSet"
-            @skip-set="onSkipSet"
-            @add-set="onAddSet"
-            @swap="onSwap"
-          />
+          <!-- Regular exercises (singles + supersets) -->
+          <template v-for="group in exerciseGroups" :key="group.type === 'single' ? group.exercise.id : `ss-${group.groupId}`">
+            <ExerciseCard
+              v-if="group.type === 'single'"
+              :ref="(el: any) => setSingleRef(group.exercise.id, el)"
+              :exercise="group.exercise as any"
+              :exercise-index="group.exerciseIndex"
+              :pool-entry="poolMap.get((group.exercise as any).exercise)"
+              :can-swap="!group.exercise.is_anchor"
+              @update-set="onUpdateSet"
+              @complete-set="onCompleteSet"
+              @skip-set="onSkipSet"
+              @add-set="onAddSet"
+              @swap="onSwap"
+            />
+            <SupersetCard
+              v-else
+              :ref="(el: any) => setSupersetRef(group.groupId, el)"
+              :exercises="group.exercises as any"
+              :exercise-indices="group.exerciseIndices"
+              :pool-map="poolMap"
+              @update-set="onUpdateSet"
+              @complete-set="onCompleteSet"
+              @skip-set="onSkipSet"
+              @add-set="onAddSet"
+            />
+          </template>
 
           <!-- Finishers -->
           <div v-if="finisherExercises.length > 0">

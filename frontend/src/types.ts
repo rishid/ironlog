@@ -48,6 +48,7 @@ export interface ExercisePool extends RecordModel {
   rest_seconds: number
   max_per_week: number
   sort_hint: number
+  superset_group: number | null
 }
 
 export interface PersonProgram extends RecordModel {
@@ -88,6 +89,7 @@ export interface SessionExercise extends RecordModel {
   is_finisher: boolean
   sort_order: number
   sets_data: SetData[]
+  superset_group: number | null
 }
 
 export interface WeightEntry extends RecordModel {

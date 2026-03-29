@@ -14,7 +14,10 @@ export const exercises: ExerciseSeed[] = [
   // ── PUSH (chest / shoulders / triceps) ──────────────────────────────────
   { name: 'Flat DB Press',                muscle_groups: ['chest', 'triceps'],                   equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 5,   notes: 'Full ROM, touch chest, 3s eccentric', youtube_url: '' },
   { name: 'Incline DB Press',             muscle_groups: ['chest', 'shoulders', 'triceps'],       equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 5,   notes: 'Bench at 30-45°, control the eccentric', youtube_url: '' },
-  { name: 'DB Floor Press',               muscle_groups: ['chest', 'triceps'],                   equipment: ['dumbbells', 'mat'],    type: 'strength',    default_increment_lbs: 5,   notes: 'Flat on floor, elbows touch floor at bottom — great lockout finisher', youtube_url: '' },
+  { name: 'DB Floor Press',               muscle_groups: ['chest', 'triceps'],                   equipment: ['dumbbells', 'mat'],    type: 'strength',    default_increment_lbs: 5,   notes: 'Flat on floor — elbows stop at floor, eliminates shoulder stress. Use for burnout sets to failure.', youtube_url: '' },
+  { name: 'DB Hex Press',                 muscle_groups: ['chest', 'triceps'],                   equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 5,   notes: 'Press DBs together hard throughout full ROM — inner chest and triceps. Use hex dumbbells or press heads together.', youtube_url: '' },
+  { name: 'Single Arm DB Press',          muscle_groups: ['chest', 'triceps', 'core'],           equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 5,   notes: 'One arm at a time on flat bench — core resists rotation, exposes imbalances. Free arm on hip or extended.', youtube_url: '' },
+  { name: 'Low to High DB Fly',           muscle_groups: ['chest', 'shoulders'],                 equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 2.5, notes: 'Start with DBs at hip level, arc upward and across to shoulder height — targets upper chest and anterior delt. Stand or kneel.', youtube_url: '' },
   { name: 'DB Chest Fly',                 muscle_groups: ['chest'],                              equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 2.5, notes: 'Slight elbow bend, arc to chest height, feel the stretch', youtube_url: '' },
   { name: 'DB Incline Chest Fly',         muscle_groups: ['chest', 'shoulders'],                 equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 2.5, notes: 'Bench at 30°, same arc as flat fly but targets upper chest', youtube_url: '' },
   { name: 'DB Shoulder Press',            muscle_groups: ['shoulders', 'triceps'],               equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Seated on bench, press to full lockout overhead', youtube_url: '' },
@@ -136,6 +139,7 @@ export interface ExercisePoolSeed {
   rest_seconds: number
   max_per_week: number
   sort_hint: number
+  superset_group: number | null
 }
 
 function pool(
@@ -150,10 +154,11 @@ function pool(
     sets_target: 3,
     rep_min: 8,
     rep_max: 10,
-    progression_increment_lbs: 0, // 0 = use exercise default
-    rest_seconds: 0, // 0 = use global default
+    progression_increment_lbs: 0,
+    rest_seconds: 0,
     max_per_week: 3,
     sort_hint: 0,
+    superset_group: null,
     ...opts,
   }
 }
@@ -173,36 +178,28 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
   notes: 'Push/Pull/Legs + Zone 2. 4×8-10 strength, controlled tempo. Zone 2 at 5-6/10 perceived effort.',
   sessions: [
     {
-      // Monday — horizontal + vertical push, shoulder isolation, triceps
+      // Monday — fixed chest/push program with Phase 3 burnout superset
       name: 'Push',
       sequence_order: 1,
       session_type: 'strength',
-      target_duration_minutes: 55,
-      target_exercise_count: 6,
+      target_duration_minutes: 65,
+      target_exercise_count: 9, // all anchors, no random picks
       exercises: [
-        // 3 anchors = always shown; 3 pool picks fill to target 6
-        anchor('Flat DB Press',    1, { sets_target: 4, rest_seconds: 90 }),
-        anchor('DB Shoulder Press',2, { sets_target: 4, rest_seconds: 90 }),
-        anchor('Incline DB Press', 3, { sets_target: 4, rest_seconds: 90 }),
-        // Shoulder isolation — rotate between lateral/front/arnold/upright
-        pool('DB Lateral Raise',             { priority: 5, sets_target: 4, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
-        pool('DB Arnold Press',              { priority: 4, sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        pool('DB Front Raise',               { priority: 3, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
-        pool('DB Upright Row',               { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        // Tricep variety
-        pool('Bench Dip',                    { priority: 5, sets_target: 4, rep_min: 8,  rep_max: 12, rest_seconds: 60 }),
-        pool('DB Skull Crusher',             { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Overhead Tricep Extension', { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Tricep Kickback',           { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        // Chest isolation
-        pool('DB Chest Fly',                 { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Incline Chest Fly',         { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        // Bodyweight push variety
-        pool('Close-Grip Push-Up',           { priority: 2, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
-        pool('Decline Push-Up',              { priority: 2, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
-        pool('Pike Push-Up',                 { priority: 2, sets_target: 3, rep_min: 8,  rep_max: 12, rest_seconds: 60 }),
-        pool('DB Push Press',                { priority: 2, sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        finisher('Hollow Hold', { rep_min: 30, rep_max: 45 }),
+        // Phase 1 — flat / incline press
+        anchor('Flat DB Press',        1, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Incline DB Press',     2, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        // Phase 2 — chest isolation
+        anchor('DB Chest Fly',         3, { sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        anchor('DB Pullover',          4, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        // Phase 2 — pressing variety
+        anchor('DB Hex Press',         5, { sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Single Arm DB Press',  6, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Low to High DB Fly',   7, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        // Phase 3 — burnout superset: A (floor press) → B (push-up) → rest 90s × 3
+        anchor('DB Floor Press', 8, { sets_target: 3, rep_min: 8, rep_max: 20, rest_seconds: 0,  superset_group: 1 }),
+        anchor('Push-Up',        9, { sets_target: 3, rep_min: 8, rep_max: 30, rest_seconds: 90, superset_group: 1 }),
+        // Finisher
+        finisher('Jump Rope — Singles', { rep_min: 200, rep_max: 200 }),
       ],
     },
     {

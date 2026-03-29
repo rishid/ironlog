@@ -5,6 +5,7 @@ export interface GeneratedExercise {
   isAnchor: boolean
   isFinisher: boolean
   sortOrder: number
+  supersetGroup: number | null
 }
 
 interface ExerciseHistory {
@@ -74,15 +75,15 @@ export function generateSessionPlan(
   let order = 1
 
   for (const a of anchors) {
-    result.push({ poolEntry: a, isAnchor: true, isFinisher: false, sortOrder: order++ })
+    result.push({ poolEntry: a, isAnchor: true, isFinisher: false, sortOrder: order++, supersetGroup: a.superset_group ?? null })
   }
 
   for (const s of sampled) {
-    result.push({ poolEntry: s, isAnchor: false, isFinisher: false, sortOrder: order++ })
+    result.push({ poolEntry: s, isAnchor: false, isFinisher: false, sortOrder: order++, supersetGroup: s.superset_group ?? null })
   }
 
   for (const f of finishers) {
-    result.push({ poolEntry: f, isAnchor: false, isFinisher: true, sortOrder: order++ })
+    result.push({ poolEntry: f, isAnchor: false, isFinisher: true, sortOrder: order++, supersetGroup: null })
   }
 
   return result

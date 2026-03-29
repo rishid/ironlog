@@ -115,6 +115,7 @@ async function createCollections() {
         { name: 'rest_seconds', type: 'number' },
         { name: 'max_per_week', type: 'number' },
         { name: 'sort_hint', type: 'number' },
+        { name: 'superset_group', type: 'number' },
       ],
     },
     {
@@ -154,6 +155,7 @@ async function createCollections() {
         { name: 'is_finisher', type: 'bool' },
         { name: 'sort_order', type: 'number' },
         { name: 'sets_data', type: 'json' },
+        { name: 'superset_group', type: 'number' },
       ],
     },
     {
@@ -254,6 +256,26 @@ async function createCollections() {
   }
 
   return collectionIdMap
+}
+
+/** Add missing fields to existing collections without destroying data. */
+async function patchCollections() {
+  const patches: { collection: string; field: any }[] = [
+    { collection: 'exercise_pool',    field: { name: 'superset_group', type: 'number' } },
+    { collection: 'session_exercises', field: { name: 'superset_group', type: 'number' } },
+  ]
+  for (const { collection, field } of patches) {
+    try {
+      const col = await pb.collections.getOne(collection)
+      const exists = (col.fields as any[]).some((f: any) => f.name === field.name)
+      if (!exists) {
+        await pb.collections.update(col.id, { fields: [...col.fields, field] })
+        console.log(`  Patched "${collection}" — added field "${field.name}"`)
+      }
+    } catch {
+      // Collection doesn't exist yet; createCollections will handle it
+    }
+  }
 }
 
 async function seedExercises(): Promise<Record<string, string>> {

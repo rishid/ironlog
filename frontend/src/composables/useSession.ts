@@ -74,6 +74,7 @@ export function useWorkoutSession() {
           is_finisher: item.isFinisher,
           sort_order: item.sortOrder,
           sets_data: setsData,
+          superset_group: item.supersetGroup ?? null,
         })
 
         // Attach exercise name for display
