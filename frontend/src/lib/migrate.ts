@@ -3,11 +3,19 @@
  *
  * Usage:
  *   PB_URL=http://localhost:8090 PB_ADMIN_EMAIL=admin@example.com PB_ADMIN_PASSWORD=password npx tsx src/lib/migrate.ts
+ *   Or just: task seed
  *
- * This script:
- * 1. Creates all required collections (if not existing)
- * 2. Seeds the exercise library
- * 3. Seeds people, programs, sessions, and exercise pool
+ * What this script does on each run:
+ * 1. Creates all collections (skips if already exist)
+ * 2. Upserts exercise_library records by name (never deletes old exercises)
+ * 3. Upserts people by name
+ * 4. For each program: if it exists, syncs session metadata + fully rebuilds exercise_pool
+ *    (delete-all-then-recreate per session). If program doesn't exist yet, creates everything.
+ *
+ * Safe to run repeatedly — idempotent for history data:
+ *   - workout_sessions, session_exercises, weight_entries, personal_records are NEVER touched
+ *   - exercise_pool is the only table that gets wiped and rebuilt (it's config, not history)
+ *   - Progression (suggested weights) is derived from session_exercises, so pool rebuilds are harmless
  */
 
 import PocketBase from 'pocketbase'
@@ -350,7 +358,79 @@ async function seedProgram(
   })
 
   if (existing.length > 0) {
-    console.log(`Program "${programDef.name}" already exists for ${personName}`)
+    // Program exists — sync session metadata and exercise pools
+    const programId = existing[0].id
+    const existingSessions = await pb.collection('program_sessions').getFullList({
+      filter: `program = "${programId}"`,
+    })
+    let sessionsUpdated = 0
+    let exercisesAdded = 0
+    let exercisesRemoved = 0
+
+    for (const sessionDef of programDef.sessions) {
+      let sessionRecord = existingSessions.find(s => s.sequence_order === sessionDef.sequence_order)
+
+      // Create session if missing
+      if (!sessionRecord) {
+        sessionRecord = await pb.collection('program_sessions').create({
+          program: programId,
+          name: sessionDef.name,
+          sequence_order: sessionDef.sequence_order,
+          session_type: sessionDef.session_type,
+          target_duration_minutes: sessionDef.target_duration_minutes,
+          target_exercise_count: sessionDef.target_exercise_count,
+        })
+        console.log(`  Created missing session ${sessionDef.sequence_order}: "${sessionDef.name}"`)
+        sessionsUpdated++
+      } else if (
+        sessionRecord.name !== sessionDef.name ||
+        sessionRecord.session_type !== sessionDef.session_type ||
+        sessionRecord.target_duration_minutes !== sessionDef.target_duration_minutes ||
+        sessionRecord.target_exercise_count !== sessionDef.target_exercise_count
+      ) {
+        await pb.collection('program_sessions').update(sessionRecord.id, {
+          name: sessionDef.name,
+          session_type: sessionDef.session_type,
+          target_duration_minutes: sessionDef.target_duration_minutes,
+          target_exercise_count: sessionDef.target_exercise_count,
+        })
+        console.log(`  Updated session ${sessionDef.sequence_order}: "${sessionRecord.name}" → "${sessionDef.name}"`)
+        sessionsUpdated++
+      }
+
+      // Sync exercise pool: delete all existing pool entries, recreate from seed
+      const existingPool = await pb.collection('exercise_pool').getFullList({
+        filter: `program_session = "${sessionRecord.id}"`,
+      })
+      for (const ep of existingPool) {
+        await pb.collection('exercise_pool').delete(ep.id)
+        exercisesRemoved++
+      }
+      for (const ex of sessionDef.exercises) {
+        const exerciseId = exerciseIdMap[ex.exercise_name]
+        if (!exerciseId) {
+          console.warn(`  Exercise not found: ${ex.exercise_name}`)
+          continue
+        }
+        await pb.collection('exercise_pool').create({
+          program_session: sessionRecord.id,
+          exercise: exerciseId,
+          is_anchor: ex.is_anchor,
+          is_finisher: ex.is_finisher,
+          priority: ex.priority,
+          sets_target: ex.sets_target,
+          rep_min: ex.rep_min,
+          rep_max: ex.rep_max,
+          progression_increment_lbs: ex.progression_increment_lbs,
+          rest_seconds: ex.rest_seconds,
+          max_per_week: ex.max_per_week,
+          sort_hint: ex.sort_hint,
+        })
+        exercisesAdded++
+      }
+    }
+
+    console.log(`Program "${programDef.name}" synced for ${personName}: ${sessionsUpdated} session(s) updated, ${exercisesRemoved} pool entries replaced with ${exercisesAdded}`)
     return
   }
 

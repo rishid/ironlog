@@ -1,4 +1,26 @@
 // Exercise library seed data (~60 exercises)
+//
+// EDITING RULES — read before changing anything:
+//
+// ✅ SAFE — edit freely, then run `task seed`:
+//   • Exercise notes, muscle_groups, equipment, default_increment_lbs
+//   • Session names, duration, sets/reps targets
+//   • Adding/removing exercises from a session's pool (anchor/pool/finisher)
+//   • Adding a brand-new exercise to the library
+//
+// ⚠️  REMOVING an exercise from the library:
+//   • Safe: old workout history is unaffected (history points to exercise_library IDs directly)
+//   • The DB record stays (orphaned but harmless) — seed never deletes from exercise_library
+//   • Just remove it from the pool arrays in the sessions below to stop it appearing in workouts
+//
+// ❌ NEVER rename an exercise:
+//   • Seed matches by name — rename = new DB record = new ID
+//   • All progression history (suggested weights) is lost for that exercise
+//   • If you must rename, update the name in the DB directly via PocketBase admin UI
+//
+// ❌ NEVER rename a program (rishiProgram.name / sonaProgram.name):
+//   • Seed matches programs by name — rename = duplicate program created on next seed
+//   • If you need a new program, that requires task reseed (wipes all data)
 
 export interface ExerciseSeed {
   name: string
@@ -179,7 +201,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
   sessions: [
     {
       // Monday — fixed chest/push program with Phase 3 burnout superset
-      name: 'Push',
+      name: 'Chest & Push',
       sequence_order: 1,
       session_type: 'strength',
       target_duration_minutes: 65,
@@ -216,7 +238,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
     },
     {
       // Wednesday — vertical + horizontal pull, rear delt, bicep variety
-      name: 'Pull',
+      name: 'Back & Biceps',
       sequence_order: 3,
       session_type: 'strength',
       target_duration_minutes: 55,
@@ -252,7 +274,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
     },
     {
       // Friday — compound legs, hip dominant + quad dominant + isolation, core
-      name: 'Legs + Core',
+      name: 'Legs & Core',
       sequence_order: 4,
       session_type: 'strength',
       target_duration_minutes: 60,
