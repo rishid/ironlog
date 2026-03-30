@@ -368,10 +368,12 @@ async function seedProgram(
     let exercisesRemoved = 0
 
     for (const sessionDef of programDef.sessions) {
-      let sessionRecord = existingSessions.find(s => s.sequence_order === sessionDef.sequence_order)
+      const existing = existingSessions.find(s => s.sequence_order === sessionDef.sequence_order)
 
-      // Create session if missing
-      if (!sessionRecord) {
+      // Create session if missing, otherwise update if changed
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let sessionRecord: any
+      if (!existing) {
         sessionRecord = await pb.collection('program_sessions').create({
           program: programId,
           name: sessionDef.name,
@@ -382,19 +384,23 @@ async function seedProgram(
         })
         console.log(`  Created missing session ${sessionDef.sequence_order}: "${sessionDef.name}"`)
         sessionsUpdated++
-      } else if (
-        sessionRecord.name !== sessionDef.name ||
-        sessionRecord.session_type !== sessionDef.session_type ||
-        sessionRecord.target_duration_minutes !== sessionDef.target_duration_minutes ||
-        sessionRecord.target_exercise_count !== sessionDef.target_exercise_count
-      ) {
+      } else {
+        sessionRecord = existing
+      }
+
+      if (existing && (
+        existing.name !== sessionDef.name ||
+        existing.session_type !== sessionDef.session_type ||
+        existing.target_duration_minutes !== sessionDef.target_duration_minutes ||
+        existing.target_exercise_count !== sessionDef.target_exercise_count
+      )) {
         await pb.collection('program_sessions').update(sessionRecord.id, {
           name: sessionDef.name,
           session_type: sessionDef.session_type,
           target_duration_minutes: sessionDef.target_duration_minutes,
           target_exercise_count: sessionDef.target_exercise_count,
         })
-        console.log(`  Updated session ${sessionDef.sequence_order}: "${sessionRecord.name}" → "${sessionDef.name}"`)
+        console.log(`  Updated session ${sessionDef.sequence_order}: "${existing.name}" → "${sessionDef.name}"`)
         sessionsUpdated++
       }
 
