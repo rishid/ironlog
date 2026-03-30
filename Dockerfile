@@ -30,10 +30,6 @@ RUN wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VE
 # Copy built frontend into PocketBase's static file directory
 COPY --from=frontend-build /app/dist /pb/pb_public
 
-# Schema migrations — auto-applied by --automigrate on first boot.
-# Creates all 11 collections. PocketBase skips already-applied migrations on restarts.
-COPY bin/pb_migrations /pb/pb_migrations
-
 # Bundled seed script — runs on every container start via entrypoint.sh.
 # Syncs exercises/programs from the image. Workout history is never touched.
 COPY --from=frontend-build /app/seed.mjs /pb/seed.mjs

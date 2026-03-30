@@ -19,7 +19,7 @@
 
 set -e
 
-/pb/pocketbase serve --http=0.0.0.0:8090 --automigrate &
+/pb/pocketbase serve --http=0.0.0.0:8090 &
 PB_PID=$!
 
 printf "[IronLog] Waiting for PocketBase"
