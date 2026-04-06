@@ -64,24 +64,24 @@ const exerciseFlow = computed(() =>
 <template>
   <div
     class="rounded-xl overflow-hidden border-l-4 transition-colors"
-    :class="allDone ? 'border-l-amber-500/30' : 'border-l-amber-400'"
+    :class="allDone ? 'border-l-amber-500/40 dark:border-l-amber-500/30' : 'border-l-amber-600 dark:border-l-amber-400'"
   >
     <!-- Superset header -->
     <div
       class="px-4 pt-3 pb-2.5 border-b transition-colors"
-      :class="allDone ? 'bg-amber-500/5 border-amber-400/10' : 'bg-amber-500/10 border-amber-400/20'"
+      :class="allDone ? 'bg-amber-50 border-amber-400/30 dark:bg-amber-500/5 dark:border-amber-400/10' : 'bg-amber-100 border-amber-400/40 dark:bg-amber-500/10 dark:border-amber-400/20'"
     >
       <div class="flex items-center justify-between">
         <span
           class="text-[11px] font-black uppercase tracking-widest"
-          :class="allDone ? 'text-amber-500/50' : 'text-amber-400'"
+          :class="allDone ? 'text-amber-600/70 dark:text-amber-500/50' : 'text-amber-600 dark:text-amber-400'"
         >⚡ Burnout Superset</span>
         <span
           class="text-xs font-bold tabular-nums"
-          :class="allDone ? 'text-amber-400/40' : 'text-amber-300'"
+          :class="allDone ? 'text-amber-600/50 dark:text-amber-400/40' : 'text-amber-700 dark:text-amber-300'"
         >{{ completedRounds }}/{{ totalRounds }} rounds</span>
       </div>
-      <p class="text-xs mt-0.5" :class="allDone ? 'text-amber-400/30' : 'text-amber-400/50'">
+      <p class="text-xs mt-0.5" :class="allDone ? 'text-amber-600/40 dark:text-amber-400/30' : 'text-amber-600/70 dark:text-amber-400/50'">
         {{ exerciseFlow }} → rest {{ restLabel }} · AMRAP each set
       </p>
     </div>
@@ -99,18 +99,18 @@ const exerciseFlow = computed(() =>
           <div
             class="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0"
             :class="allDone
-              ? 'bg-amber-400/5 border-amber-400/20'
-              : 'bg-amber-400/15 border-amber-400/30'"
+              ? 'bg-amber-50 border-amber-400/30 dark:bg-amber-400/5 dark:border-amber-400/20'
+              : 'bg-amber-100 border-amber-500/40 dark:bg-amber-400/15 dark:border-amber-400/30'"
           >
-            <span class="text-[9px] font-black leading-none" :class="allDone ? 'text-amber-500/50' : 'text-amber-400'">
+            <span class="text-[9px] font-black leading-none" :class="allDone ? 'text-amber-600/70 dark:text-amber-500/50' : 'text-amber-600 dark:text-amber-400'">
               {{ LABELS[i] }}
             </span>
           </div>
           <span
             class="text-[10px] font-semibold uppercase tracking-wide"
-            :class="allDone ? 'text-amber-400/30' : 'text-amber-400/60'"
+            :class="allDone ? 'text-amber-600/40 dark:text-amber-400/30' : 'text-amber-700/70 dark:text-amber-400/60'"
           >Exercise {{ LABELS[i] }}</span>
-          <div v-if="i < exercises.length - 1" class="ml-auto text-[10px] text-amber-400/30 italic">then immediately →</div>
+          <div v-if="i < exercises.length - 1" class="ml-auto text-[10px] text-amber-600/50 dark:text-amber-400/30 italic">then immediately →</div>
         </div>
 
         <ExerciseCard

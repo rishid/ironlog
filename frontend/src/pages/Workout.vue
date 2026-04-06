@@ -44,7 +44,7 @@ function setSupersetRef(groupId: number, el: any) {
 }
 function collapseExercise(exercise: SessionExercise) {
   const sg = (exercise as any).superset_group as number | null
-  if (sg != null) supersetCardRefs.value.get(sg)?.collapseExercise(exercise.id)
+  if (sg) supersetCardRefs.value.get(sg)?.collapseExercise(exercise.id)
   else singleCardRefs.value.get(exercise.id)?.collapse()
 }
 
@@ -294,7 +294,7 @@ const exerciseGroups = computed<RenderGroup[]>(() => {
     const sg = (exercise as any).superset_group as number | null
     const idx = exercises.value.indexOf(exercise)
 
-    if (sg != null) {
+    if (sg) {
       if (emitted.has(sg)) continue
       emitted.add(sg)
       const groupExercises = regularExercises.value.filter(e => (e as any).superset_group === sg)
