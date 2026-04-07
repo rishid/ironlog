@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import pb from '../pb'
 import type { PersonProgram, ProgramSession } from '../types'
 import { usePersonStore } from '../stores/person'
@@ -11,7 +11,7 @@ export function useSequence() {
   const personProgram = ref<PersonProgram | null>(null)
   const sessions = ref<ProgramSession[]>([])
   const suggestedSession = ref<ProgramSession | null>(null)
-  const loading = ref(false)
+  const loading = shallowRef(false)
 
   async function load() {
     if (!activePersonId.value) return

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import type { SessionExercise, SetData, ExerciseLibrary, ExercisePoolExpanded } from '../types'
 import SetRow from './SetRow.vue'
 
@@ -18,7 +18,7 @@ const emit = defineEmits<{
   swap: [exerciseIndex: number]
 }>()
 
-const expanded = ref(true)
+const expanded = shallowRef(true)
 
 const exerciseInfo = computed(() => props.exercise.expand?.exercise)
 

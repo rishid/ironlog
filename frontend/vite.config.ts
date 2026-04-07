@@ -12,8 +12,22 @@ export default defineConfig({
       includeAssets: ['icons/*.png'],
       manifest: false, // using public/manifest.json
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Exclude HTML from precache so navigation requests always hit the
+        // network — this lets Authelia (forward-auth proxy) intercept and
+        // redirect unauthenticated requests instead of serving a cached page.
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // Navigation requests (HTML) — NetworkFirst so Authelia can auth-check.
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+              networkTimeoutSeconds: 5,
+            },
+          },
           {
             urlPattern: /^https?:\/\/.*\/api\//,
             handler: 'NetworkFirst',

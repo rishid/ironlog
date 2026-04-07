@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 import pb from '../pb'
 import type {
   ProgramSession,
@@ -22,9 +22,9 @@ export function useWorkoutSession() {
   const sessionStore = useSessionStore()
   const { advanceCursor } = useSequence()
 
-  const generating = ref(false)
-  const saving = ref(false)
-  const prAlert = ref<{ exerciseName: string; newE1rm: number } | null>(null)
+  const generating = shallowRef(false)
+  const saving = shallowRef(false)
+  const prAlert = shallowRef<{ exerciseName: string; newE1rm: number } | null>(null)
 
   /**
    * Start a new workout session for the given person + program session.

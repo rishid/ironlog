@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import pb from '../pb'
 import type { WorkoutSession, WeightEntry } from '../types'
 import { usePersonStore } from '../stores/person'
@@ -10,8 +10,8 @@ export function usePerson() {
 
   const recentSessions = ref<WorkoutSession[]>([])
   const recentWeights = ref<WeightEntry[]>([])
-  const sessionsThisWeek = ref(0)
-  const loading = ref(false)
+  const sessionsThisWeek = shallowRef(0)
+  const loading = shallowRef(false)
 
   async function loadDashboardData() {
     if (!activePersonId.value) return

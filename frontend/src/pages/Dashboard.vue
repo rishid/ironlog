@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePersonStore } from '../stores/person'
 import { storeToRefs } from 'pinia'
@@ -38,14 +38,14 @@ const lastSession = computed(() => {
   return recentSessions.value[0] as WorkoutSessionExpanded | undefined
 })
 
-const weightInput = ref('')
-const showWeightInput = ref(false)
-const savingWeight = ref(false)
+const weightInput = shallowRef('')
+const showWeightInput = shallowRef(false)
+const savingWeight = shallowRef(false)
 
 // Session preview modal
-const previewSession = ref<ProgramSession | null>(null)
+const previewSession = shallowRef<ProgramSession | null>(null)
 const previewPool = ref<ExercisePoolExpanded[]>([])
-const loadingPreview = ref(false)
+const loadingPreview = shallowRef(false)
 
 async function onPreview(session: ProgramSession) {
   previewSession.value = session
@@ -69,12 +69,12 @@ const previewPool_ = computed(() => previewPool.value.filter(p => !p.is_anchor &
 const previewFinishers = computed(() => previewPool.value.filter(p => p.is_finisher))
 
 // Quick log modal
-const showQuickLog = ref(false)
-const quickLogLabel = ref('')
-const quickLogDuration = ref('')
-const quickLogNotes = ref('')
-const quickLogDate = ref(new Date().toISOString().split('T')[0])
-const savingQuickLog = ref(false)
+const showQuickLog = shallowRef(false)
+const quickLogLabel = shallowRef('')
+const quickLogDuration = shallowRef('')
+const quickLogNotes = shallowRef('')
+const quickLogDate = shallowRef(new Date().toISOString().split('T')[0])
+const savingQuickLog = shallowRef(false)
 
 function quickLogDateAsISO(): string {
   const today = new Date().toISOString().split('T')[0]

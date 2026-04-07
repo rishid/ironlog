@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePersonStore } from '../stores/person'
 import { useSessionStore } from '../stores/session'
@@ -24,7 +24,7 @@ const { isActive, exercises, activeSession } = storeToRefs(sessionStore)
 const { generating, saving, prAlert, startSession, completeSet, swapExercise, finishSession, saveExerciseData } = useWorkoutSession()
 
 const programSession = ref<ProgramSession | null>(null)
-const elapsedTimer = ref('')
+const elapsedTimer = shallowRef('')
 let timerInterval: ReturnType<typeof setInterval> | null = null
 
 // Exercise pool for rest seconds lookup
@@ -352,7 +352,7 @@ const warmupText = computed(() => {
   return '5 min jump rope at moderate pace'
 })
 
-const warmupDismissed = ref(false)
+const warmupDismissed = shallowRef(false)
 </script>
 
 <template>

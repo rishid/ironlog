@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import { usePersonStore } from './stores/person'
 import PersonSelector from './components/PersonSelector.vue'
@@ -7,9 +7,6 @@ import PersonSelector from './components/PersonSelector.vue'
 const route = useRoute()
 const personStore = usePersonStore()
 
-onMounted(() => {
-  personStore.loadPeople()
-})
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: 'home' },
@@ -28,7 +25,7 @@ const navIcons: Record<string, string> = {
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────────
-const isDark = ref(false)
+const isDark = shallowRef(false)
 let autoTimer: ReturnType<typeof setInterval> | null = null
 
 function isDarkTime(): boolean {
@@ -50,6 +47,8 @@ function toggleTheme() {
 }
 
 onMounted(() => {
+  personStore.loadPeople()
+
   const saved = localStorage.getItem('ironlog-theme')
   if (saved === 'dark' || saved === 'light') {
     applyTheme(saved === 'dark')
