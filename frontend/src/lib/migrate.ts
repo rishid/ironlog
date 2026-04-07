@@ -501,6 +501,7 @@ async function seedProgram(
         rest_seconds: ex.rest_seconds,
         max_per_week: ex.max_per_week,
         sort_hint: ex.sort_hint,
+        superset_group: ex.superset_group ?? null,
       })
     }
     console.log(`  Created session "${session.name}" with ${session.exercises.length} exercises`)
@@ -515,6 +516,9 @@ async function main() {
 
   console.log('\n--- Creating Collections ---')
   await createCollections()
+
+  console.log('\n--- Patching Collections ---')
+  await patchCollections()
 
   console.log('\n--- Seeding Exercises ---')
   const exerciseIdMap = await seedExercises()
