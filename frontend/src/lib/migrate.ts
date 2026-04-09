@@ -431,6 +431,7 @@ async function seedProgram(
           rest_seconds: ex.rest_seconds,
           max_per_week: ex.max_per_week,
           sort_hint: ex.sort_hint,
+          superset_group: ex.superset_group ?? null,
         })
         exercisesAdded++
       }

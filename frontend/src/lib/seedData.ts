@@ -242,7 +242,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       sequence_order: 3,
       session_type: 'strength',
       target_duration_minutes: 55,
-      target_exercise_count: 6,
+      target_exercise_count: 8,
       exercises: [
         // 2 anchors; 4 pool picks fill to 6
         anchor('Bent-Over DB Row', 1, { sets_target: 4, rest_seconds: 90 }),
