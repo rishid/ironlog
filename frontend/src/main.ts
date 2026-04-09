@@ -1,43 +1,32 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { registerSW } from 'virtual:pwa-register'
 import router from './router'
 import App from './App.vue'
 import './style.css'
 
-const BUILD_KEY = 'ironlog-build-id'
+// Reload the page as soon as a new SW version is ready.
+// `autoUpdate` installs the new SW silently; this callback fires when
+// it activates and claims the client — guaranteeing fresh assets.
+registerSW({
+  onRegisteredSW(_scriptUrl, registration) {
+    // Poll every 60s so long-lived sessions pick up updates quickly.
+    if (registration) {
+      setInterval(() => registration.update(), 60_000)
+    }
+  },
+  onNeedRefresh() {
+    // New SW is waiting — skip waiting and reload to serve fresh assets.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        reg?.waiting?.postMessage({ type: 'SKIP_WAITING' })
+      })
+    }
+    window.location.reload()
+  },
+})
 
-async function resetStalePwaCachesIfNeeded() {
-	const previousBuild = localStorage.getItem(BUILD_KEY)
-	const currentBuild = __APP_BUILD__
-
-	if (previousBuild && previousBuild !== currentBuild) {
-		if ('serviceWorker' in navigator) {
-			const regs = await navigator.serviceWorker.getRegistrations()
-			await Promise.all(regs.map((reg) => reg.unregister()))
-		}
-
-		if ('caches' in window) {
-			const names = await caches.keys()
-			await Promise.all(names.map((name) => caches.delete(name)))
-		}
-
-		localStorage.setItem(BUILD_KEY, currentBuild)
-		window.location.reload()
-		return true
-	}
-
-	localStorage.setItem(BUILD_KEY, currentBuild)
-	return false
-}
-
-async function bootstrap() {
-	const reloading = await resetStalePwaCachesIfNeeded()
-	if (reloading) return
-
-	const app = createApp(App)
-	app.use(createPinia())
-	app.use(router)
-	app.mount('#app')
-}
-
-bootstrap()
+const app = createApp(App)
+app.use(createPinia())
+app.use(router)
+app.mount('#app')

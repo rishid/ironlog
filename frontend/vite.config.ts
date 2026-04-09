@@ -4,14 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  define: {
-    __APP_BUILD__: JSON.stringify(new Date().toISOString()),
-  },
   plugins: [
     tailwindcss(),
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['icons/*.png'],
       manifest: false, // using public/manifest.json
       workbox: {

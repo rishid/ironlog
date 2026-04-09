@@ -27,7 +27,7 @@ const dashOffset = computed(() => {
   <Transition name="slide-up">
     <div
       v-if="restTimerRunning"
-      class="fixed bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 px-4 py-3 z-40 flex items-center justify-between relative overflow-hidden"
+      class="fixed bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 px-4 py-3 z-50 flex items-center justify-between overflow-hidden"
       style="padding-bottom: max(env(safe-area-inset-bottom), 0.75rem)"
     >
       <div class="flex items-center gap-3">
