@@ -4,6 +4,7 @@ import { RouterView, useRoute } from 'vue-router'
 import { usePersonStore } from './stores/person'
 import { useSessionStore } from './stores/session'
 import PersonSelector from './components/PersonSelector.vue'
+import RestTimer from './components/RestTimer.vue'
 
 const route = useRoute()
 const personStore = usePersonStore()
@@ -27,7 +28,7 @@ const navIcons: Record<string, string> = {
 }
 
 const isWorkoutRoute = computed(() => route.path === '/workout')
-const mobileWorkoutProgress = computed(() => {
+const workoutProgress = computed(() => {
   const total = sessionStore.exercises.length
   if (!total) return 0
   const done = sessionStore.exercises.filter((e) =>
@@ -117,7 +118,7 @@ onUnmounted(() => { if (autoTimer) clearInterval(autoTimer) })
     </nav>
 
     <!-- Mobile top bar -->
-    <header class="lg:hidden flex items-center justify-between px-4 py-3 bg-surface-light border-b border-gray-700/30" style="padding-top: calc(env(safe-area-inset-top) + 0.75rem)">
+    <header class="lg:hidden sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-surface-light border-b border-gray-700/30 relative" style="padding-top: calc(env(safe-area-inset-top) + 0.75rem)">
       <router-link to="/" class="text-lg font-bold text-accent">IronLog</router-link>
       <div class="flex items-center gap-2">
         <button
@@ -133,16 +134,26 @@ onUnmounted(() => { if (autoTimer) clearInterval(autoTimer) })
         </button>
         <PersonSelector />
       </div>
+
+      <div
+        v-if="isWorkoutRoute && sessionStore.isActive"
+        class="absolute left-0 right-0 bottom-0 h-1 bg-surface"
+      >
+        <div
+          class="h-full bg-accent transition-all duration-500 ease-out"
+          :style="{ width: `${workoutProgress}%` }"
+        ></div>
+      </div>
     </header>
 
-    <!-- Mobile workout progress (always visible while scrolling) -->
+    <!-- Desktop persistent workout progress -->
     <div
       v-if="isWorkoutRoute && sessionStore.isActive"
-      class="lg:hidden h-1 bg-surface-light border-b border-gray-700/30"
+      class="hidden lg:block fixed top-0 left-64 right-0 h-1 bg-surface-light z-50"
     >
       <div
         class="h-full bg-accent transition-all duration-500 ease-out"
-        :style="{ width: `${mobileWorkoutProgress}%` }"
+        :style="{ width: `${workoutProgress}%` }"
       ></div>
     </div>
 
@@ -150,5 +161,8 @@ onUnmounted(() => { if (autoTimer) clearInterval(autoTimer) })
     <main class="flex-1 pb-0 overflow-y-auto">
       <RouterView />
     </main>
+
+    <!-- Rendered at app shell level to avoid iOS fixed-position issues inside scroll containers -->
+    <RestTimer />
   </div>
 </template>

@@ -9,7 +9,6 @@ import { getRestSeconds } from '../composables/useProgression'
 import ExerciseCard from '../components/ExerciseCard.vue'
 import SupersetCard from '../components/SupersetCard.vue'
 import FinisherBlock from '../components/FinisherBlock.vue'
-import RestTimer from '../components/RestTimer.vue'
 import PRBanner from '../components/PRBanner.vue'
 import pb from '../pb'
 import type { ProgramSession, ExercisePoolExpanded, SessionExercise, SetData } from '../types'
@@ -557,9 +556,6 @@ const warmupDismissed = shallowRef(false)
           </div>
         </div>
       </div>
-
-      <!-- Rest Timer -->
-      <RestTimer />
     </template>
   </div>
 </template>
