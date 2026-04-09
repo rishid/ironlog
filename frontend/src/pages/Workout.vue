@@ -26,6 +26,7 @@ const { generating, saving, prAlert, startSession, completeSet, swapExercise, fi
 const programSession = ref<ProgramSession | null>(null)
 const elapsedTimer = shallowRef('')
 let timerInterval: ReturnType<typeof setInterval> | null = null
+const STALE_SESSION_RESET_MS = 3 * 60 * 60 * 1000
 
 // Exercise pool for rest seconds lookup
 const poolMap = ref<Map<string, ExercisePoolExpanded>>(new Map())
@@ -42,8 +43,17 @@ function setSupersetRef(groupId: number, el: any) {
   if (el) supersetCardRefs.value.set(groupId, el)
   else supersetCardRefs.value.delete(groupId)
 }
+
+function getSupersetGroup(exercise: SessionExercise): number | null {
+  const direct = (exercise as any).superset_group as number | null
+  if (direct) return direct
+
+  // Fallback for sessions created before superset_group was persisted on session_exercises.
+  return poolMap.value.get(exercise.exercise)?.superset_group ?? null
+}
+
 function collapseExercise(exercise: SessionExercise) {
-  const sg = (exercise as any).superset_group as number | null
+  const sg = getSupersetGroup(exercise)
   if (sg) supersetCardRefs.value.get(sg)?.collapseExercise(exercise.id)
   else singleCardRefs.value.get(exercise.id)?.collapse()
 }
@@ -84,6 +94,8 @@ onMounted(async () => {
   }
 
   startElapsedTimer()
+
+  await handleStaleSession()
 
   if (isActive.value) {
     requestWakeLock()
@@ -260,18 +272,66 @@ async function onFinish() {
   router.push('/')
 }
 
-async function onAbandon() {
-  const anyProgress = exercises.value.some(e => e.sets_data.some(s => s.completed))
-  if (anyProgress && !confirm('Abandon this workout? Progress will be lost.')) return
-  // Delete the incomplete session record from PocketBase
-  if (sessionStore.activeSession?.id) {
+function formatElapsedAge(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours <= 0) return `${minutes} min`
+  if (minutes === 0) return `${hours}h`
+  return `${hours}h ${minutes}m`
+}
+
+async function discardActiveWorkout() {
+  const sessionId = sessionStore.activeSession?.id
+  if (sessionId) {
     try {
-      await pb.collection('workout_sessions').delete(sessionStore.activeSession.id)
+      const sessionExercises = await pb.collection('session_exercises').getFullList<SessionExercise>({
+        filter: `session = "${sessionId}"`,
+      })
+      await Promise.all(sessionExercises.map((se) => pb.collection('session_exercises').delete(se.id)))
+    } catch {
+      // best effort cleanup; proceed to delete workout session regardless
+    }
+
+    try {
+      await pb.collection('workout_sessions').delete(sessionId)
     } catch { /* best effort */ }
   }
+
   sessionStore.endSession()
   if (timerInterval) clearInterval(timerInterval)
   releaseWakeLock()
+}
+
+async function onStopWorkout() {
+  const anyProgress = exercises.value.some(e => e.sets_data.some(s => s.completed))
+  const confirmMsg = anyProgress
+    ? 'Stop this workout and discard progress? It will not be saved to history.'
+    : 'Stop this workout? It will not be saved to history.'
+
+  if (!confirm(confirmMsg)) return
+
+  await discardActiveWorkout()
+  router.push('/')
+}
+
+async function handleStaleSession() {
+  if (!isActive.value || !sessionStore.startTime) return
+
+  const ageMs = Date.now() - sessionStore.startTime
+  if (ageMs < STALE_SESSION_RESET_MS) return
+
+  const ageLabel = formatElapsedAge(ageMs)
+  const shouldResume = confirm(
+    `This workout was started ${ageLabel} ago. Resume with timer reset to now?\n\nPress Cancel to stop and discard it.`
+  )
+
+  if (shouldResume) {
+    sessionStore.resetStartTime()
+    return
+  }
+
+  await discardActiveWorkout()
   router.push('/')
 }
 
@@ -291,13 +351,13 @@ const exerciseGroups = computed<RenderGroup[]>(() => {
   const emitted = new Set<number>()
 
   for (const exercise of regularExercises.value) {
-    const sg = (exercise as any).superset_group as number | null
+    const sg = getSupersetGroup(exercise)
     const idx = exercises.value.indexOf(exercise)
 
     if (sg) {
       if (emitted.has(sg)) continue
       emitted.add(sg)
-      const groupExercises = regularExercises.value.filter(e => (e as any).superset_group === sg)
+      const groupExercises = regularExercises.value.filter(e => getSupersetGroup(e) === sg)
       const groupIndices = groupExercises.map(e => exercises.value.indexOf(e))
       result.push({ type: 'superset', groupId: sg, exercises: groupExercises, exerciseIndices: groupIndices })
     } else {
@@ -388,13 +448,11 @@ const warmupDismissed = shallowRef(false)
         <div class="flex items-start justify-between mb-2">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <button
-              @click="onAbandon"
-              class="text-gray-500 hover:text-gray-300 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-light transition-colors"
-              title="Abandon workout"
+              @click="onStopWorkout"
+              class="text-rose-400/90 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-3 h-9 rounded-lg text-xs font-semibold tracking-wide transition-colors flex-shrink-0"
+              title="Stop workout"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              Stop
             </button>
             <h1 class="text-lg font-bold leading-tight truncate">
               {{ sessionName }}<span v-if="muscleGroupSubtitle" class="font-normal text-gray-400 text-sm"> — {{ muscleGroupSubtitle }}</span>

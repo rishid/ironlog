@@ -27,7 +27,7 @@ const dashOffset = computed(() => {
   <Transition name="slide-up">
     <div
       v-if="restTimerRunning"
-      class="fixed bottom-16 lg:bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 px-4 py-3 z-40 flex items-center justify-between"
+      class="fixed bottom-16 lg:bottom-0 left-0 right-0 bg-surface-light border-t border-gray-700/50 px-4 py-3 z-40 flex items-center justify-between relative overflow-hidden"
       style="padding-bottom: max(env(safe-area-inset-bottom), 0.75rem)"
     >
       <div class="flex items-center gap-3">
@@ -72,6 +72,13 @@ const dashOffset = computed(() => {
         >
           Skip
         </button>
+      </div>
+
+      <div class="absolute left-0 right-0 bottom-0 h-1 bg-surface-lighter/70">
+        <div
+          class="h-full bg-accent transition-all duration-1000 ease-linear"
+          :style="{ width: `${progress}%` }"
+        ></div>
       </div>
     </div>
   </Transition>

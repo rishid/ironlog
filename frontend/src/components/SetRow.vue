@@ -4,6 +4,7 @@ import type { SetData } from '../types'
 defineProps<{
   set: SetData
   setNumber: number
+  useRepInput?: boolean
   disabled?: boolean
 }>()
 
@@ -25,11 +26,14 @@ const emit = defineEmits<{
       :class="set.completed ? 'text-success' : set.skipped ? 'text-gray-500' : 'text-accent'"
     >{{ setNumber }}</span>
 
-    <!-- Weight input -->
+    <!-- Weight or reps input -->
     <input
       type="number"
-      :value="set.weight_lbs || ''"
-      @input="emit('update', { weight_lbs: parseFloat(($event.target as HTMLInputElement).value) || 0 })"
+      :value="useRepInput ? (set.reps_actual || '') : (set.weight_lbs || '')"
+      @input="emit('update', useRepInput
+        ? { reps_actual: parseFloat(($event.target as HTMLInputElement).value) || 0 }
+        : { weight_lbs: parseFloat(($event.target as HTMLInputElement).value) || 0 }
+      )"
       class="flex-1 min-w-0 bg-surface-light border rounded px-3 py-2 text-sm font-semibold text-center focus:outline-none transition-colors"
       :class="[
         set.completed
@@ -39,9 +43,9 @@ const emit = defineEmits<{
             : 'border-gray-700 focus:border-accent text-gray-100'
       ]"
       :disabled="set.completed || set.skipped || disabled"
-      placeholder="lbs"
-      step="2.5"
-      inputmode="decimal"
+      :placeholder="useRepInput ? 'reps' : 'lbs'"
+      :step="useRepInput ? 1 : 2.5"
+      :inputmode="useRepInput ? 'numeric' : 'decimal'"
     />
 
     <!-- Complete toggle -->

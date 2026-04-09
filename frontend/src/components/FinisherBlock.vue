@@ -30,6 +30,7 @@ const targetDescription = computed(() => {
     return props.notes || `${min}–${max} rounds`
   }
   if (name.includes('jump rope') && min >= 50) {
+    if (min === max) return `${min} skips, unbroken`
     return `${min}–${max} skips, unbroken`
   }
 

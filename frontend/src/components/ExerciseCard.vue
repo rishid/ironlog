@@ -58,6 +58,14 @@ const allDone = computed(() => {
   return sets.length > 0 && sets.every(s => s.completed || s.skipped)
 })
 
+const usesRepInput = computed(() => {
+  const info = exerciseInfo.value
+  if (!info) return false
+
+  // default_increment_lbs=0 marks bodyweight/time/count style movements.
+  return info.default_increment_lbs === 0
+})
+
 function collapse() {
   expanded.value = false
 }
@@ -125,7 +133,7 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
       <!-- Weight column label -->
       <div class="flex items-center gap-2 px-1 mb-1 text-[10px] text-gray-600 uppercase tracking-wider">
         <span class="w-6"></span>
-        <span class="flex-1 text-center">Weight (lbs)</span>
+        <span class="flex-1 text-center">{{ usesRepInput ? 'Reps / Count' : 'Weight (lbs)' }}</span>
         <span class="w-10"></span>
         <span class="w-10"></span>
       </div>
@@ -137,6 +145,7 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
           :key="i"
           :set="set"
           :set-number="i + 1"
+          :use-rep-input="usesRepInput"
           @update="(data) => handleSetUpdate(i, data)"
           @complete="emit('completeSet', exerciseIndex, i)"
           @skip="emit('skipSet', exerciseIndex, i)"

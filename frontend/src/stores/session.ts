@@ -153,6 +153,10 @@ export const useSessionStore = defineStore('session', () => {
     clearStorage()
   }
 
+  function resetStartTime() {
+    startTime.value = Date.now()
+  }
+
   function getElapsedMinutes(): number {
     if (!startTime.value) return 0
     return Math.round((Date.now() - startTime.value) / 60000)
@@ -174,6 +178,7 @@ export const useSessionStore = defineStore('session', () => {
     addRestTime,
     stopRestTimer,
     endSession,
+    resetStartTime,
     getElapsedMinutes,
   }
 })
