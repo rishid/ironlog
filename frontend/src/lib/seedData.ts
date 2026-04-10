@@ -1,4 +1,4 @@
-// Exercise library seed data (~60 exercises)
+// Exercise library seed data
 //
 // EDITING RULES — read before changing anything:
 //
@@ -26,7 +26,7 @@ export interface ExerciseSeed {
   name: string
   muscle_groups: string[]
   equipment: string[]
-  type: 'strength' | 'cardio' | 'plyometric' | 'core'
+  type: 'strength' | 'cardio' | 'plyometric' | 'core' | 'conditioning'
   default_increment_lbs: number
   notes: string
   youtube_url: string
@@ -57,6 +57,16 @@ export const exercises: ExerciseSeed[] = [
   { name: 'Decline Push-Up',              muscle_groups: ['chest', 'shoulders'],                 equipment: ['mat', 'bench'],        type: 'strength',    default_increment_lbs: 0,   notes: 'Feet on bench or box, targets upper chest and front delts', youtube_url: '' },
   { name: 'Pike Push-Up',                 muscle_groups: ['shoulders', 'triceps'],               equipment: ['mat'],                 type: 'strength',    default_increment_lbs: 0,   notes: 'Hips high in inverted-V, lower crown toward floor — bodyweight OHP', youtube_url: '' },
 
+  // ── CABLE EXERCISES (requires cable/pulley system) ──────────────────────
+  { name: 'Cable Crossover',              muscle_groups: ['chest'],                              equipment: ['cable'],               type: 'strength',    default_increment_lbs: 5,   notes: 'Constant tension through full ROM — replaces flat + incline fly. Step forward, slight lean, arc hands together at chest height.', youtube_url: '' },
+  { name: 'Cable Face Pull',              muscle_groups: ['shoulders', 'back'],                  equipment: ['cable', 'rope'],       type: 'strength',    default_increment_lbs: 2.5, notes: 'Best rear delt / external rotation exercise period. Pull rope to face, rotate hands out, squeeze 2s. Protects rotator cuff.', youtube_url: '' },
+  { name: 'Cable Tricep Pushdown',        muscle_groups: ['triceps'],                            equipment: ['cable', 'rope'],       type: 'strength',    default_increment_lbs: 2.5, notes: 'Elbows pinned to sides, push to full lockout, squeeze at bottom. Far more joint-friendly than skull crushers.', youtube_url: '' },
+  { name: 'Cable Woodchop',               muscle_groups: ['core', 'obliques'],                   equipment: ['cable'],               type: 'core',        default_increment_lbs: 5,   notes: 'Rotation under load — arms straight, rotate from hips, core controls the motion. High-to-low or low-to-high.', youtube_url: '' },
+  { name: 'Cable Lateral Raise',          muscle_groups: ['shoulders'],                          equipment: ['cable'],               type: 'strength',    default_increment_lbs: 2.5, notes: 'Behind-the-back cable path — constant tension throughout. Superior to DB lateral raise for growth.', youtube_url: '' },
+  { name: 'Cable Curl',                   muscle_groups: ['biceps'],                             equipment: ['cable'],               type: 'strength',    default_increment_lbs: 2.5, notes: 'Constant tension — no dead spot at top or bottom like DB curls. Rope or straight bar attachment.', youtube_url: '' },
+  { name: 'Cable Pull-Through',           muscle_groups: ['glutes', 'hamstrings'],               equipment: ['cable', 'rope'],       type: 'strength',    default_increment_lbs: 5,   notes: 'Face away from cable, hinge at hips, drive through glutes. Constant tension hip hinge — great RDL alternative.', youtube_url: '' },
+  { name: 'Cable Pallof Press',           muscle_groups: ['core', 'obliques'],                   equipment: ['cable'],               type: 'core',        default_increment_lbs: 2.5, notes: 'Anti-rotation press — stand sideways to cable, press hands forward and resist rotation. Functional core at its best.', youtube_url: '' },
+
   // ── PULL (back / biceps / rear delt) ────────────────────────────────────
   { name: 'Pull-Up',                      muscle_groups: ['back', 'biceps', 'shoulders'],        equipment: ['pull_up_bar'],         type: 'strength',    default_increment_lbs: 0,   notes: 'Dead hang start, pull chin over bar, 3s controlled descent', youtube_url: '' },
   { name: 'Wide-Grip Pull-Up',            muscle_groups: ['back', 'shoulders'],                  equipment: ['pull_up_bar'],         type: 'strength',    default_increment_lbs: 0,   notes: 'Hands wider than shoulder-width, emphasizes lats over biceps', youtube_url: '' },
@@ -77,6 +87,7 @@ export const exercises: ExerciseSeed[] = [
   { name: 'DB Zottman Curl',              muscle_groups: ['biceps', 'forearms'],                 equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 2.5, notes: 'Curl up supinated, rotate to pronated at top, slow eccentric descent', youtube_url: '' },
   { name: 'DB Spider Curl',               muscle_groups: ['biceps'],                             equipment: ['dumbbells', 'bench'],  type: 'strength',    default_increment_lbs: 2.5, notes: 'Prone on incline bench, arm hangs vertical — strictest possible curl', youtube_url: '' },
   { name: 'DB Reverse Curl',              muscle_groups: ['forearms', 'biceps'],                 equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 2.5, notes: 'Palms down, slow eccentric — builds forearm extensors', youtube_url: '' },
+  { name: 'Band Pull-Apart',              muscle_groups: ['shoulders', 'back'],                  equipment: ['band'],                type: 'strength',    default_increment_lbs: 0,   notes: 'Arms straight at chest height, pull band apart to touch chest, squeeze rear delts 1s. Great warmup and posture corrector.', youtube_url: '' },
 
   // ── LEGS (quads / hamstrings / glutes / calves) ──────────────────────────
   { name: 'DB Goblet Squat',              muscle_groups: ['quads', 'glutes'],                    equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Hold DB at chest, elbows track between knees, sit deep', youtube_url: '' },
@@ -136,6 +147,20 @@ export const exercises: ExerciseSeed[] = [
   { name: 'DB Thruster',                  muscle_groups: ['quads', 'shoulders', 'glutes'],       equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Deep front squat into overhead press — one fluid motion, no pause', youtube_url: '' },
   { name: 'DB Clean and Press',           muscle_groups: ['shoulders', 'back', 'legs'],          equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Explosive hip drive, pull DBs to shoulders, then press overhead', youtube_url: '' },
   { name: 'DB Man Maker',                 muscle_groups: ['chest', 'back', 'shoulders', 'quads'], equipment: ['dumbbells'],          type: 'strength',    default_increment_lbs: 5,   notes: 'Push-up + row each side + clean & press = 1 rep — conditioning king', youtube_url: '' },
+
+  // ── CONDITIONING (HIIT / EMOM / AMRAP building blocks) ──────────────────
+  // Bodyweight or light-load movements for high-effort intervals.
+  // On metoprolol: use RPE 7-9/10, NOT heart rate targets.
+  // EPOC from these sessions helps offset metoprolol's suppressed RMR.
+  { name: 'Burpee to Push-Up',            muscle_groups: ['chest', 'quads', 'core', 'shoulders'], equipment: ['mat'],               type: 'conditioning', default_increment_lbs: 0,  notes: 'Full push-up at bottom, explosive jump at top. Strict form > speed.', youtube_url: '' },
+  { name: 'DB Devil Press',               muscle_groups: ['chest', 'back', 'shoulders', 'quads', 'glutes'], equipment: ['dumbbells', 'mat'], type: 'conditioning', default_increment_lbs: 5, notes: 'Burpee with DBs in hand → dual DB snatch overhead in one motion. Full body metabolic destroyer.', youtube_url: '' },
+  { name: 'KB/DB Swing',                  muscle_groups: ['glutes', 'hamstrings', 'core', 'shoulders'], equipment: ['dumbbells'],    type: 'conditioning', default_increment_lbs: 5,  notes: 'Hip hinge, explosive hip snap, arms are just hooks. Use one DB held vertically. Breathing: exhale at top.', youtube_url: '' },
+  { name: 'Sprawl',                       muscle_groups: ['quads', 'core', 'shoulders'],         equipment: ['mat'],                type: 'conditioning', default_increment_lbs: 0,  notes: 'Like a burpee without the push-up — drop hips to floor, explode back up. Faster cycle time = more metabolic.', youtube_url: '' },
+  { name: 'Skater Jump',                  muscle_groups: ['quads', 'glutes', 'calves'],          equipment: ['mat'],                type: 'conditioning', default_increment_lbs: 0,  notes: 'Lateral bound, land on one foot, absorb and hold 1s. Builds single-leg power and hip stability.', youtube_url: '' },
+  { name: 'Bear Crawl',                   muscle_groups: ['core', 'shoulders', 'quads'],         equipment: ['mat'],                type: 'conditioning', default_increment_lbs: 0,  notes: 'Knees 1 inch off floor, opposite hand + foot move together. 20-40 ft per set. Brutal on core.', youtube_url: '' },
+  { name: 'Broad Jump',                   muscle_groups: ['quads', 'glutes', 'calves'],          equipment: ['mat'],                type: 'conditioning', default_increment_lbs: 0,  notes: 'Arm swing, jump for max distance, land soft. Step back to start — never jump backwards.', youtube_url: '' },
+  { name: 'Plank to Push-Up',             muscle_groups: ['core', 'triceps', 'shoulders'],       equipment: ['mat'],                type: 'conditioning', default_increment_lbs: 0,  notes: 'Forearm plank → push up to hands one arm at a time → back down. Alternate lead arm each rep.', youtube_url: '' },
+  { name: 'DB Snatch',                    muscle_groups: ['shoulders', 'back', 'glutes', 'quads'], equipment: ['dumbbells'],         type: 'conditioning', default_increment_lbs: 5,  notes: 'Single DB from floor to overhead in one explosive pull. Alternate arms. Full body power + conditioning.', youtube_url: '' },
 ]
 
 // Program definitions
@@ -146,6 +171,10 @@ export interface ProgramSessionSeed {
   session_type: 'strength' | 'cardio' | 'recovery' | 'mixed'
   target_duration_minutes: number
   target_exercise_count: number
+  // When true, this session can be appended to any strength day.
+  // The app should present it as "Add conditioning?" after the main session.
+  // It is NEVER auto-included — always opt-in per workout.
+  is_optional: boolean
   exercises: ExercisePoolSeed[]
 }
 
@@ -162,6 +191,11 @@ export interface ExercisePoolSeed {
   max_per_week: number
   sort_hint: number
   superset_group: number | null
+  // Which equipment is required for this pool entry to be eligible.
+  // If empty, always eligible. If set, the user must have that equipment
+  // enabled in their profile for this exercise to appear.
+  // This lets cable exercises auto-upgrade DB alternatives when available.
+  requires_equipment: string[]
 }
 
 function pool(
@@ -181,6 +215,7 @@ function pool(
     max_per_week: 3,
     sort_hint: 0,
     superset_group: null,
+    requires_equipment: [],
     ...opts,
   }
 }
@@ -193,42 +228,86 @@ function finisher(exercise_name: string, opts: Partial<ExercisePoolSeed> = {}): 
   return pool(exercise_name, { is_finisher: true, sets_target: 1, rep_min: 1, rep_max: 1, ...opts })
 }
 
-// Rishi's Push/Pull/Legs program (Mon Push · Tue Zone2 · Wed Pull · Fri Legs · Sat Zone2+Mobility)
-// 4 sets × 8-10 on all strength work. Zone 2 at perceived 5-6/10 effort.
+// ════════════════════════════════════════════════════════════════════════════
+// Rishi's Push/Pull/Legs program
+// ════════════════════════════════════════════════════════════════════════════
+//
+// 2x/week frequency on all major groups. Sessions follow a sequence that
+// can start any day — not pinned to specific weekdays.
+//
+// FREQUENCY MAP (by session, not day):
+//   Muscle Group      │ Session 1 (primary)   │ Session 2 (secondary)
+//   ──────────────────┼───────────────────────┼───────────────────────
+//   Chest             │ Push                  │ Pull (Push-Up finisher)
+//   Back              │ Pull                  │ Legs (Pull-Up pool)
+//   Shoulders         │ Push                  │ Pull (Arnold / Face Pull)
+//   Triceps           │ Push (pressing)       │ Pull (Pushdown / OH Ext)
+//   Biceps            │ Pull                  │ Push (Hammer Curl) + Legs
+//   Quads             │ Legs                  │ Push (Goblet Squat light)
+//   Hamstrings/Glutes │ Legs                  │ Pull (RDL / Pull-Through)
+//   Calves            │ Legs                  │ Pull (Calf Raise pool)
+//   Rear Delts        │ Pull                  │ Legs (Rear Delt / Band)
+//   Core              │ Legs + Zone 2         │ Pull (finishers)
+//
+// EQUIPMENT GATING:
+//   Cable exercises have requires_equipment: ['cable'] (and ['rope'] where needed).
+//   If the user hasn't enabled cable equipment, the app skips them and falls
+//   back to DB alternatives at lower priority.
+//
+// OPTIONAL CONDITIONING (Session 6):
+//   is_optional: true — app offers "Add conditioning?" after strength.
+//   Never auto-scheduled. Uses RPE 7-9/10, not heart rate (metoprolol).
+//
 export const rishiProgram: { name: string; notes: string; sessions: ProgramSessionSeed[] } = {
   name: 'Rishi PPL',
-  notes: 'Push/Pull/Legs + Zone 2. 4×8-10 strength, controlled tempo. Zone 2 at 5-6/10 perceived effort.',
+  notes: 'Push/Pull/Legs + Zone 2. 2x/week frequency on all major groups. 4×8-10 strength, controlled tempo. Zone 2 at 5-6/10 perceived effort. Optional EMOM/AMRAP conditioning for EPOC.',
   sessions: [
     {
-      // Monday — fixed chest/push program with Phase 3 burnout superset
+      // ── PUSH (primary: chest, shoulders, triceps · secondary: biceps, quads) ──
       name: 'Chest & Push',
       sequence_order: 1,
       session_type: 'strength',
-      target_duration_minutes: 65,
-      target_exercise_count: 9, // all anchors, no random picks
+      is_optional: false,
+      target_duration_minutes: 70,
+      target_exercise_count: 11,
       exercises: [
         // Phase 1 — flat / incline press
         anchor('Flat DB Press',        1, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Incline DB Press',     2, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        // Phase 2 — chest isolation
+        // Phase 2 — chest isolation (cable upgrades DB fly when available)
         anchor('DB Chest Fly',         3, { sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('Cable Crossover',           { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
         anchor('DB Pullover',          4, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         // Phase 2 — pressing variety
         anchor('DB Hex Press',         5, { sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Single Arm DB Press',  6, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Low to High DB Fly',   7, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        // Phase 3 — burnout superset: A (floor press) → B (push-up) → rest 90s × 3
+        // Phase 3 — burnout superset
         anchor('DB Floor Press', 8, { sets_target: 3, rep_min: 8, rep_max: 20, rest_seconds: 0,  superset_group: 1 }),
         anchor('Push-Up',        9, { sets_target: 3, rep_min: 8, rep_max: 30, rest_seconds: 90, superset_group: 1 }),
+
+        // ── CROSSOVER: lateral delt 2x ──
+        anchor('DB Lateral Raise', 10, { sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
+        pool('Cable Lateral Raise',       { priority: 5, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable'] }),
+
+        // ── CROSSOVER: biceps 2x (light — primary is Wed) ──
+        pool('DB Hammer Curl',            { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('DB Bicep Curl',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('Cable Curl',                { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+
+        // ── CROSSOVER: quads 2x (light — primary is Fri) ──
+        pool('DB Goblet Squat',           { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 75 }),
+
         // Finisher
         finisher('Jump Rope — Singles', { rep_min: 200, rep_max: 200 }),
       ],
     },
     {
-      // Tuesday — conversational Zone 2, fat-burning, cardiovascular health
+      // ── Zone 2 cardio ──
       name: 'Zone 2 — Cardio',
       sequence_order: 2,
       session_type: 'cardio',
+      is_optional: false,
       target_duration_minutes: 50,
       target_exercise_count: 1,
       exercises: [
@@ -237,55 +316,80 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       ],
     },
     {
-      // Wednesday — vertical + horizontal pull, rear delt, bicep variety
+      // ── PULL (primary: back, biceps, rear delt · secondary: triceps, shoulders, calves, hams) ──
       name: 'Back & Biceps',
       sequence_order: 3,
       session_type: 'strength',
-      target_duration_minutes: 55,
-      target_exercise_count: 8,
+      is_optional: false,
+      target_duration_minutes: 65,
+      target_exercise_count: 10,
       exercises: [
-        // 2 anchors; 4 pool picks fill to 6
+        // Primary pulls
         anchor('Bent-Over DB Row', 1, { sets_target: 4, rest_seconds: 90 }),
         anchor('Pull-Up',          2, { sets_target: 4, rep_min: 4, rep_max: 8, rest_seconds: 120 }),
-        // Pull-up bar variety — rotate grip week to week
+        // Pull-up bar variety
         pool('Chin-Up',                  { priority: 5, sets_target: 4, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
         pool('Wide-Grip Pull-Up',        { priority: 4, sets_target: 4, rep_min: 3,  rep_max: 7,  rest_seconds: 120 }),
         pool('Neutral Grip Pull-Up',     { priority: 4, sets_target: 4, rep_min: 5,  rep_max: 9,  rest_seconds: 120 }),
         pool('Hanging Knee Raise',       { priority: 3, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
         pool('Hanging Leg Raise',        { priority: 2, sets_target: 3, rep_min: 6,  rep_max: 10, rest_seconds: 60 }),
-        // Row variety — different positions hit different back angles
+        // Row variety
         pool('DB Single-Arm Row',        { priority: 4, sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         pool('Incline DB Row',           { priority: 4, sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         pool('DB Chest-Supported Row',   { priority: 4, sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         pool('DB Renegade Row',          { priority: 3, sets_target: 3, rep_min: 6,  rep_max: 8,  rest_seconds: 90 }),
         pool('DB Pullover',              { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        // Rear delt / upper back
+        // Rear delt / upper back — cable face pull is the gold standard
+        pool('Cable Face Pull',          { priority: 5, sets_target: 4, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
         pool('DB Rear Delt Fly',         { priority: 4, sets_target: 4, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
+        pool('Band Pull-Apart',          { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45, requires_equipment: ['band'] }),
         pool('DB Shrug',                 { priority: 2, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 60 }),
-        // Bicep variety — cycle through each session
+        // Bicep variety
         pool('DB Bicep Curl',            { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('DB Hammer Curl',           { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('DB Incline Curl',          { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('DB Concentration Curl',    { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('DB Zottman Curl',          { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('DB Spider Curl',           { priority: 2, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('Cable Curl',               { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+
+        // ── CROSSOVER: shoulder pressing 2x (light — primary is Mon) ──
+        pool('DB Arnold Press',              { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+        pool('DB Shoulder Press',            { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+
+        // ── CROSSOVER: triceps 2x (cable pushdown preferred when available) ──
+        pool('Cable Tricep Pushdown',        { priority: 5, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
+        pool('DB Overhead Tricep Extension', { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('DB Skull Crusher',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+
+        // ── CROSSOVER: calves 2x (primary is Fri) ──
+        pool('Standing Calf Raise',          { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45 }),
+
+        // ── CROSSOVER: hamstrings/glutes 2x (light — primary is Fri) ──
+        pool('DB Romanian Deadlift',         { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+        pool('Cable Pull-Through',           { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75, requires_equipment: ['cable', 'rope'] }),
+
+        // Finishers — chest 2x + core 2x
+        finisher('Push-Up',  { rep_min: 15, rep_max: 30 }),
         finisher('Dead Bug', { rep_min: 10, rep_max: 15 }),
       ],
     },
     {
-      // Friday — compound legs, hip dominant + quad dominant + isolation, core
+      // ── LEGS & CORE (primary: quads, hams, glutes, calves, core · secondary: back, biceps, rear delts) ──
       name: 'Legs & Core',
       sequence_order: 4,
       session_type: 'strength',
-      target_duration_minutes: 60,
-      target_exercise_count: 7,
+      is_optional: false,
+      target_duration_minutes: 65,
+      target_exercise_count: 9,
       exercises: [
-        // 2 anchors; 5 pool picks fill to 7
+        // Primary compound legs
         anchor('DB Goblet Squat',       1, { sets_target: 4, rest_seconds: 90 }),
         anchor('DB Romanian Deadlift',  2, { sets_target: 4, rest_seconds: 90 }),
         // Hip dominant
         pool('DB Hip Thrust',                    { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 90 }),
         pool('DB Single-Leg Romanian Deadlift',  { priority: 4, sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        pool('Cable Pull-Through',               { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75, requires_equipment: ['cable', 'rope'] }),
         pool('Glute Bridge',                     { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
         pool('DB Deadlift',                      { priority: 4, sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         // Quad dominant / unilateral
@@ -300,6 +404,25 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         // Calves
         pool('Standing Calf Raise',   { priority: 4, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45 }),
         pool('Single-Leg Calf Raise', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 45 }),
+
+        // ── CROSSOVER: back 2x (primary is Wed) ──
+        pool('Pull-Up',                   { priority: 4, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
+        pool('Chin-Up',                   { priority: 3, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
+        pool('Neutral Grip Pull-Up',      { priority: 3, sets_target: 3, rep_min: 5,  rep_max: 9,  rest_seconds: 120 }),
+
+        // ── CROSSOVER: biceps 2x ──
+        pool('DB Bicep Curl',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('DB Hammer Curl',            { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+
+        // ── CROSSOVER: rear delts 2x (primary is Wed) ──
+        pool('DB Rear Delt Fly',          { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
+        pool('Cable Face Pull',           { priority: 4, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
+        pool('Band Pull-Apart',           { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45, requires_equipment: ['band'] }),
+
+        // ── CROSSOVER: obliques 2x (cable is uniquely good here) ──
+        pool('Cable Woodchop',            { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        pool('Cable Pallof Press',        { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+
         // Core at end
         pool('Plank',        { priority: 3, sets_target: 3, rep_min: 30, rep_max: 60, rest_seconds: 45 }),
         pool('Dead Bug',     { priority: 3, sets_target: 3, rep_min: 10, rep_max: 15, rest_seconds: 45 }),
@@ -309,10 +432,11 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       ],
     },
     {
-      // Saturday — longer zone 2 + post-cardio core/mobility work
+      // ── Zone 2 + Mobility ──
       name: 'Zone 2 + Mobility',
       sequence_order: 5,
       session_type: 'recovery',
+      is_optional: false,
       target_duration_minutes: 60,
       target_exercise_count: 1,
       exercises: [
@@ -320,6 +444,44 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         pool('Row — Steady State',   { sets_target: 1, rep_min: 1, rep_max: 1, priority: 3, rest_seconds: 0 }),
         finisher('Plank',      { rep_min: 45, rep_max: 90 }),
         finisher('Bird Dog',   { rep_min: 10, rep_max: 15 }),
+      ],
+    },
+    {
+      // ── OPTIONAL — CONDITIONING (EMOM / AMRAP — opt-in after any strength session) ──
+      //
+      // Never auto-scheduled. App offers it after completing a strength session.
+      //
+      // Format options (app picks one per session):
+      //   EMOM 10: pick 5 exercises, alternate odd/even minutes
+      //   AMRAP 8: pick 3-4 exercises, cycle through for 8 min
+      //   Tabata: pick 2 exercises, 20s on/10s off × 8 rounds
+      //
+      // All RPE-based (7-9/10). Do NOT use heart rate on metoprolol.
+      // Primary metabolic value: EPOC (elevated post-exercise calorie burn
+      // for 12-24h) which helps offset metoprolol's suppressed RMR.
+      name: 'Conditioning — EMOM/AMRAP',
+      sequence_order: 6,
+      session_type: 'mixed',
+      is_optional: true,
+      target_duration_minutes: 10,
+      target_exercise_count: 4,
+      exercises: [
+        pool('Burpee to Push-Up',     { priority: 5, sets_target: 1, rep_min: 6,  rep_max: 10, rest_seconds: 0 }),
+        pool('DB Devil Press',        { priority: 5, sets_target: 1, rep_min: 5,  rep_max: 8,  rest_seconds: 0 }),
+        pool('KB/DB Swing',           { priority: 5, sets_target: 1, rep_min: 12, rep_max: 20, rest_seconds: 0 }),
+        pool('DB Snatch',             { priority: 4, sets_target: 1, rep_min: 5,  rep_max: 8,  rest_seconds: 0 }),
+        pool('Sprawl',                { priority: 4, sets_target: 1, rep_min: 8,  rep_max: 12, rest_seconds: 0 }),
+        pool('Skater Jump',           { priority: 4, sets_target: 1, rep_min: 8,  rep_max: 12, rest_seconds: 0 }),
+        pool('Mountain Climber',      { priority: 4, sets_target: 1, rep_min: 15, rep_max: 20, rest_seconds: 0 }),
+        pool('Bear Crawl',            { priority: 3, sets_target: 1, rep_min: 1,  rep_max: 1,  rest_seconds: 0 }),
+        pool('Broad Jump',            { priority: 3, sets_target: 1, rep_min: 5,  rep_max: 8,  rest_seconds: 0 }),
+        pool('Plank to Push-Up',      { priority: 3, sets_target: 1, rep_min: 8,  rep_max: 12, rest_seconds: 0 }),
+        pool('Jump Squat',            { priority: 3, sets_target: 1, rep_min: 10, rep_max: 15, rest_seconds: 0 }),
+        pool('Box Jump',              { priority: 3, sets_target: 1, rep_min: 6,  rep_max: 10, rest_seconds: 0 }),
+        pool('Jump Rope — HIIT (20/10)', { priority: 3, sets_target: 1, rep_min: 1, rep_max: 1, rest_seconds: 0 }),
+        pool('DB Thruster',           { priority: 4, sets_target: 1, rep_min: 8,  rep_max: 12, rest_seconds: 0 }),
+        pool('DB Man Maker',          { priority: 4, sets_target: 1, rep_min: 4,  rep_max: 6,  rest_seconds: 0 }),
+        pool('Burpee',                { priority: 3, sets_target: 1, rep_min: 8,  rep_max: 12, rest_seconds: 0 }),
       ],
     },
   ],
@@ -334,6 +496,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Upper Body',
       sequence_order: 1,
       session_type: 'strength',
+      is_optional: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
@@ -353,6 +516,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Lower Body',
       sequence_order: 2,
       session_type: 'strength',
+      is_optional: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
@@ -370,6 +534,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Full Body',
       sequence_order: 3,
       session_type: 'mixed',
+      is_optional: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [

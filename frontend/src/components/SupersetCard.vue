@@ -7,6 +7,7 @@ const props = defineProps<{
   exercises: SessionExercise[]
   exerciseIndices: number[]
   poolMap: Map<string, ExercisePoolExpanded>
+  weightNotes?: Record<string, string>
 }>()
 
 const emit = defineEmits<{
@@ -119,6 +120,7 @@ const exerciseFlow = computed(() =>
           :exercise-index="exerciseIndices[i]"
           :pool-entry="poolMap.get(exercise.exercise)"
           :can-swap="false"
+          :weight-note="weightNotes?.[exercise.id]"
           @update-set="(idx, setIdx, data) => emit('updateSet', idx, setIdx, data)"
           @complete-set="(idx, setIdx) => emit('completeSet', idx, setIdx)"
           @skip-set="(idx, setIdx) => emit('skipSet', idx, setIdx)"

@@ -17,27 +17,35 @@ interface ExerciseHistory {
 /**
  * Weighted random selection algorithm for session exercise generation.
  *
- * 1. Always include anchors (sorted by sort_hint)
- * 2. Always include finishers (placed last)
- * 3. Filter candidates by max_per_week
- * 4. Calculate effective_weight = priority × recency_multiplier
- * 5. Weighted random sample without replacement
+ * 1. Filter entire pool by requires_equipment vs ownedEquipment
+ * 2. Always include anchors (sorted by sort_hint)
+ * 3. Always include finishers (placed last)
+ * 4. Filter candidates by max_per_week
+ * 5. Calculate effective_weight = priority × recency_multiplier
+ * 6. Weighted random sample without replacement
  */
 export function generateSessionPlan(
   pool: ExercisePoolExpanded[],
   targetExerciseCount: number,
-  exerciseHistory: ExerciseHistory[]
+  exerciseHistory: ExerciseHistory[],
+  ownedEquipment: Set<string> = new Set()
 ): GeneratedExercise[] {
   const historyMap = new Map(exerciseHistory.map((h) => [h.exerciseId, h]))
 
+  // Filter entire pool by equipment eligibility
+  const eligiblePool = pool.filter((e) => {
+    const req: string[] = (e as any).requires_equipment || []
+    return req.length === 0 || req.every((eq) => ownedEquipment.has(eq))
+  })
+
   // Separate anchors, finishers, and candidates
-  const anchors = pool
+  const anchors = eligiblePool
     .filter((e) => e.is_anchor)
     .sort((a, b) => (a.sort_hint || 0) - (b.sort_hint || 0))
 
-  const finishers = pool.filter((e) => e.is_finisher)
+  const finishers = eligiblePool.filter((e) => e.is_finisher)
 
-  const candidates = pool.filter((e) => !e.is_anchor && !e.is_finisher)
+  const candidates = eligiblePool.filter((e) => !e.is_anchor && !e.is_finisher)
 
   // Filter candidates by max_per_week
   const eligibleCandidates = candidates.filter((c) => {

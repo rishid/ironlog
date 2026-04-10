@@ -4,11 +4,12 @@ import { usePersonStore } from '../stores/person'
 import { storeToRefs } from 'pinia'
 import pb from '../pb'
 import type { ExerciseLibrary, Person } from '../types'
+import { OPTIONAL_EQUIPMENT } from '../types'
 
 const personStore = usePersonStore()
-const { people } = storeToRefs(personStore)
+const { people, ownedEquipment } = storeToRefs(personStore)
 
-const activeTab = ref<'library' | 'people' | 'export'>('library')
+const activeTab = ref<'library' | 'equipment' | 'people' | 'export'>('library')
 
 // Exercise library
 const exercises = ref<ExerciseLibrary[]>([])
@@ -106,7 +107,7 @@ onMounted(loadExercises)
     <!-- Tab selector -->
     <div class="flex gap-1 bg-surface-light rounded-lg p-1 mb-6">
       <button
-        v-for="tab in (['library', 'people', 'export'] as const)"
+        v-for="tab in (['library', 'equipment', 'people', 'export'] as const)"
         :key="tab"
         @click="activeTab = tab"
         class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors capitalize min-h-[44px]"
@@ -185,6 +186,44 @@ onMounted(loadExercises)
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Equipment Tab -->
+    <div v-if="activeTab === 'equipment'">
+      <p class="text-sm text-gray-400 mb-5">
+        Toggle equipment you have access to. Cable exercises auto-replace dumbbell alternatives when enabled.
+      </p>
+
+      <div class="space-y-3">
+        <div
+          v-for="eq in OPTIONAL_EQUIPMENT"
+          :key="eq.id"
+          class="bg-surface-lighter rounded-xl p-4 flex items-center justify-between"
+          :class="eq.dependsOn && !ownedEquipment.has(eq.dependsOn) ? 'opacity-40' : ''"
+        >
+          <div>
+            <p class="font-medium text-sm">{{ eq.label }}</p>
+            <p v-if="eq.dependsOn && !ownedEquipment.has(eq.dependsOn)" class="text-xs text-gray-500 mt-0.5">
+              Requires {{ OPTIONAL_EQUIPMENT.find(e => e.id === eq.dependsOn)?.label }}
+            </p>
+          </div>
+          <button
+            @click="personStore.toggleEquipment(eq.id)"
+            :disabled="!!(eq.dependsOn && !ownedEquipment.has(eq.dependsOn))"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:cursor-not-allowed"
+            :class="ownedEquipment.has(eq.id) ? 'bg-accent' : 'bg-gray-700'"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+              :class="ownedEquipment.has(eq.id) ? 'translate-x-6' : 'translate-x-1'"
+            />
+          </button>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-5">
+        Equipment settings are per-person and saved locally.
+      </p>
     </div>
 
     <!-- People Tab -->

@@ -8,6 +8,7 @@ const props = defineProps<{
   exerciseIndex: number
   poolEntry?: ExercisePoolExpanded
   canSwap?: boolean
+  weightNote?: string
 }>()
 
 const emit = defineEmits<{
@@ -100,12 +101,32 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
       class="w-full flex items-start justify-between p-4 text-left min-h-[44px]"
     >
       <div class="flex-1 min-w-0">
-        <h3
-          class="font-bold text-base leading-tight"
-          :class="allDone ? 'text-success/70' : 'text-gray-100'"
-        >
-          {{ exerciseInfo?.name || 'Exercise' }}
-        </h3>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h3
+            class="font-bold text-base leading-tight"
+            :class="allDone ? 'text-success/70' : 'text-gray-100'"
+          >
+            {{ exerciseInfo?.name || 'Exercise' }}
+          </h3>
+          <span
+            v-if="weightNote === 'progression' && !allDone"
+            class="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400"
+          >
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+            Weight up
+          </span>
+          <span
+            v-else-if="weightNote === 'deload' && !allDone"
+            class="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400"
+          >
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            Deload
+          </span>
+        </div>
         <p v-if="exerciseInfo?.notes" class="text-xs text-gray-400 italic mt-0.5">
           {{ exerciseInfo.notes }}
         </p>

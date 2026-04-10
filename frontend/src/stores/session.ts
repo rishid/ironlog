@@ -45,6 +45,16 @@ export const useSessionStore = defineStore('session', () => {
   const restTimerRunning = ref(false)
   let restInterval: ReturnType<typeof setInterval> | null = null
 
+  // Weight progression notes (not persisted — set at session start, cleared on end)
+  // Key: session_exercise ID, Value: reason string from calculateProgression
+  const weightNotes = ref<Record<string, string>>({})
+
+  function setWeightNote(exerciseId: string, reason: string) {
+    if (reason !== 'maintain' && reason !== 'first_time') {
+      weightNotes.value = { ...weightNotes.value, [exerciseId]: reason }
+    }
+  }
+
   // Restore from localStorage on init
   const saved = loadFromStorage()
   if (saved) {
@@ -149,6 +159,7 @@ export const useSessionStore = defineStore('session', () => {
     activeSession.value = null
     exercises.value = []
     startTime.value = null
+    weightNotes.value = {}
     stopRestTimer()
     clearStorage()
   }
@@ -170,6 +181,7 @@ export const useSessionStore = defineStore('session', () => {
     restTimerSeconds,
     restTimerTotal,
     restTimerRunning,
+    weightNotes,
     startSession,
     updateSetData,
     addSet,
@@ -180,5 +192,6 @@ export const useSessionStore = defineStore('session', () => {
     endSession,
     resetStartTime,
     getElapsedMinutes,
+    setWeightNote,
   }
 })

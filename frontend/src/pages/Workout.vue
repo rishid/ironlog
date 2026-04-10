@@ -251,24 +251,43 @@ async function onFinisherToggle(exerciseIndex: number, completed: boolean) {
   }
 }
 
+async function maybeOfferConditioning(completedSession: ProgramSession): Promise<string | null> {
+  // Only offer after strength sessions, and only if there's an optional conditioning session
+  if (completedSession.session_type !== 'strength') return null
+  try {
+    const optionals = await pb.collection('program_sessions').getFullList<ProgramSession>({
+      filter: `program = "${completedSession.program}" && is_optional = true`,
+    })
+    if (optionals.length === 0) return null
+    const conditioning = optionals[0]
+    if (confirm(`Add ${conditioning.target_duration_minutes}-min conditioning block (${conditioning.name})?`)) {
+      return conditioning.id
+    }
+  } catch { /* is_optional field not yet in DB — skip silently */ }
+  return null
+}
+
 async function autoFinish() {
   if (!programSession.value || !activePersonId.value) return
-  // Small delay so user sees the checkmark before the dialog
   await new Promise(r => setTimeout(r, 400))
   if (!confirm('All done! Finish this workout?')) return
-  await finishSession(activePersonId.value, programSession.value)
+  const session = programSession.value
+  await finishSession(activePersonId.value, session)
   if (timerInterval) clearInterval(timerInterval)
   releaseWakeLock()
-  router.push('/')
+  const conditioningId = await maybeOfferConditioning(session)
+  router.push(conditioningId ? `/workout?sessionId=${conditioningId}` : '/')
 }
 
 async function onFinish() {
   if (!programSession.value || !activePersonId.value) return
   if (!confirm('Finish this workout?')) return
-  await finishSession(activePersonId.value, programSession.value)
+  const session = programSession.value
+  await finishSession(activePersonId.value, session)
   if (timerInterval) clearInterval(timerInterval)
   releaseWakeLock()
-  router.push('/')
+  const conditioningId = await maybeOfferConditioning(session)
+  router.push(conditioningId ? `/workout?sessionId=${conditioningId}` : '/')
 }
 
 function formatElapsedAge(ms: number): string {
@@ -519,6 +538,7 @@ const warmupDismissed = shallowRef(false)
               :exercise-index="group.exerciseIndex"
               :pool-entry="poolMap.get((group.exercise as any).exercise)"
               :can-swap="!group.exercise.is_anchor"
+              :weight-note="sessionStore.weightNotes[group.exercise.id]"
               @update-set="onUpdateSet"
               @complete-set="onCompleteSet"
               @skip-set="onSkipSet"
@@ -531,6 +551,7 @@ const warmupDismissed = shallowRef(false)
               :exercises="group.exercises as any"
               :exercise-indices="group.exerciseIndices"
               :pool-map="poolMap"
+              :weight-notes="sessionStore.weightNotes"
               @update-set="onUpdateSet"
               @complete-set="onCompleteSet"
               @skip-set="onSkipSet"

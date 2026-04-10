@@ -76,7 +76,7 @@ async function createCollections() {
         { name: 'name', type: 'text', required: true },
         { name: 'muscle_groups', type: 'json' },
         { name: 'equipment', type: 'json' },
-        sel('type', ['strength', 'cardio', 'plyometric', 'core'], true),
+        sel('type', ['strength', 'cardio', 'plyometric', 'core', 'conditioning'], true),
         { name: 'default_increment_lbs', type: 'number' },
         { name: 'notes', type: 'text' },
         { name: 'youtube_url', type: 'url' },
@@ -105,6 +105,7 @@ async function createCollections() {
         sel('session_type', ['strength', 'cardio', 'recovery', 'mixed'], true),
         { name: 'target_duration_minutes', type: 'number' },
         { name: 'target_exercise_count', type: 'number' },
+        { name: 'is_optional', type: 'bool' },
       ],
     },
     {
@@ -124,6 +125,7 @@ async function createCollections() {
         { name: 'max_per_week', type: 'number' },
         { name: 'sort_hint', type: 'number' },
         { name: 'superset_group', type: 'number' },
+        { name: 'requires_equipment', type: 'json' },
       ],
     },
     {
@@ -269,8 +271,10 @@ async function createCollections() {
 /** Add missing fields to existing collections without destroying data. */
 async function patchCollections() {
   const patches: { collection: string; field: any }[] = [
-    { collection: 'exercise_pool',    field: { name: 'superset_group', type: 'number' } },
-    { collection: 'session_exercises', field: { name: 'superset_group', type: 'number' } },
+    { collection: 'exercise_pool',     field: { name: 'superset_group',      type: 'number' } },
+    { collection: 'session_exercises', field: { name: 'superset_group',      type: 'number' } },
+    { collection: 'exercise_pool',     field: { name: 'requires_equipment',  type: 'json'   } },
+    { collection: 'program_sessions',  field: { name: 'is_optional',         type: 'bool'   } },
   ]
   for (const { collection, field } of patches) {
     try {
@@ -283,6 +287,20 @@ async function patchCollections() {
     } catch {
       // Collection doesn't exist yet; createCollections will handle it
     }
+  }
+
+  // Ensure exercise_library.type select allows 'conditioning' (added with new exercises)
+  try {
+    const col = await pb.collections.getOne('exercise_library')
+    const typeField = (col.fields as any[]).find((f: any) => f.name === 'type' && f.type === 'select')
+    if (typeField && !typeField.values?.includes('conditioning')) {
+      const updatedField = { ...typeField, values: [...(typeField.values || []), 'conditioning'] }
+      const otherFields = (col.fields as any[]).filter((f: any) => !(f.name === 'type' && f.type === 'select'))
+      await pb.collections.update(col.id, { fields: [...otherFields, updatedField] })
+      console.log('  Patched "exercise_library" — added "conditioning" to type select')
+    }
+  } catch {
+    // Collection doesn't exist yet
   }
 }
 
@@ -381,6 +399,7 @@ async function seedProgram(
           session_type: sessionDef.session_type,
           target_duration_minutes: sessionDef.target_duration_minutes,
           target_exercise_count: sessionDef.target_exercise_count,
+          is_optional: sessionDef.is_optional ?? false,
         })
         console.log(`  Created missing session ${sessionDef.sequence_order}: "${sessionDef.name}"`)
         sessionsUpdated++
@@ -392,13 +411,15 @@ async function seedProgram(
         existing.name !== sessionDef.name ||
         existing.session_type !== sessionDef.session_type ||
         existing.target_duration_minutes !== sessionDef.target_duration_minutes ||
-        existing.target_exercise_count !== sessionDef.target_exercise_count
+        existing.target_exercise_count !== sessionDef.target_exercise_count ||
+        !!existing.is_optional !== !!(sessionDef.is_optional ?? false)
       )) {
         await pb.collection('program_sessions').update(sessionRecord.id, {
           name: sessionDef.name,
           session_type: sessionDef.session_type,
           target_duration_minutes: sessionDef.target_duration_minutes,
           target_exercise_count: sessionDef.target_exercise_count,
+          is_optional: sessionDef.is_optional ?? false,
         })
         console.log(`  Updated session ${sessionDef.sequence_order}: "${existing.name}" → "${sessionDef.name}"`)
         sessionsUpdated++
@@ -432,6 +453,7 @@ async function seedProgram(
           max_per_week: ex.max_per_week,
           sort_hint: ex.sort_hint,
           superset_group: ex.superset_group ?? null,
+          requires_equipment: ex.requires_equipment ?? [],
         })
         exercisesAdded++
       }
@@ -480,6 +502,7 @@ async function seedProgram(
       session_type: session.session_type,
       target_duration_minutes: session.target_duration_minutes,
       target_exercise_count: session.target_exercise_count,
+      is_optional: session.is_optional ?? false,
     })
 
     for (const ex of session.exercises) {
@@ -503,6 +526,7 @@ async function seedProgram(
         max_per_week: ex.max_per_week,
         sort_hint: ex.sort_hint,
         superset_group: ex.superset_group ?? null,
+        requires_equipment: ex.requires_equipment ?? [],
       })
     }
     console.log(`  Created session "${session.name}" with ${session.exercises.length} exercises`)

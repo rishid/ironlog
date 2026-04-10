@@ -8,6 +8,7 @@ import type {
   SetData,
 } from '../types'
 import { useSessionStore } from '../stores/session'
+import { usePersonStore } from '../stores/person'
 import { useSequence } from './useSequence'
 import { generateSessionPlan, type GeneratedExercise } from '../lib/planGenerator'
 import {
@@ -20,6 +21,7 @@ import {
 
 export function useWorkoutSession() {
   const sessionStore = useSessionStore()
+  const personStore = usePersonStore()
   const { advanceCursor } = useSequence()
 
   const generating = shallowRef(false)
@@ -43,8 +45,8 @@ export function useWorkoutSession() {
       const exerciseIds = [...new Set(pool.map((p) => p.exercise))]
       const history = await getExerciseHistory(personId, exerciseIds)
 
-      // 3. Generate exercise plan
-      const plan = generateSessionPlan(pool, programSession.target_exercise_count, history)
+      // 3. Generate exercise plan (filtered by person's owned equipment)
+      const plan = generateSessionPlan(pool, programSession.target_exercise_count, history, personStore.ownedEquipment)
 
       // 4. Create workout_session record
       const workoutSession = await pb.collection('workout_sessions').create<WorkoutSession>({
@@ -64,7 +66,7 @@ export function useWorkoutSession() {
       const sessionExercises: SessionExercise[] = []
 
       for (const item of plan) {
-        const { weight } = await getSuggestedWeight(personId, item.poolEntry.exercise, item.poolEntry)
+        const { weight, reason } = await getSuggestedWeight(personId, item.poolEntry.exercise, item.poolEntry)
         const setsData = buildInitialSets(item.poolEntry, weight)
 
         const se = await pb.collection('session_exercises').create<SessionExercise>({
@@ -80,6 +82,9 @@ export function useWorkoutSession() {
         // Attach exercise name for display
         ;(se as any).expand = { exercise: item.poolEntry.expand?.exercise }
         sessionExercises.push(se)
+
+        // Tag with progression reason so UI can surface it
+        sessionStore.setWeightNote(se.id, reason)
       }
 
       // 6. Start session in store
@@ -150,7 +155,11 @@ export function useWorkoutSession() {
     })
 
     const currentIds = new Set(sessionStore.exercises.map((e) => e.exercise))
-    const alternatives = pool.filter((p) => !currentIds.has(p.exercise))
+    const alternatives = pool.filter((p) => {
+      if (currentIds.has(p.exercise)) return false
+      const req: string[] = (p as any).requires_equipment || []
+      return req.length === 0 || req.every((eq) => personStore.ownedEquipment.has(eq))
+    })
 
     if (alternatives.length === 0) return
 

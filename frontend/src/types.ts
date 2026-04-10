@@ -10,7 +10,7 @@ export interface ExerciseLibrary extends RecordModel {
   name: string
   muscle_groups: string[]
   equipment: string[]
-  type: 'strength' | 'cardio' | 'plyometric' | 'core'
+  type: 'strength' | 'cardio' | 'plyometric' | 'core' | 'conditioning'
   default_increment_lbs: number
   notes: string
   youtube_url: string
@@ -33,6 +33,7 @@ export interface ProgramSession extends RecordModel {
   session_type: 'strength' | 'cardio' | 'recovery' | 'mixed'
   target_duration_minutes: number
   target_exercise_count: number
+  is_optional: boolean
 }
 
 export interface ExercisePool extends RecordModel {
@@ -49,7 +50,15 @@ export interface ExercisePool extends RecordModel {
   max_per_week: number
   sort_hint: number
   superset_group: number | null
+  requires_equipment: string[]
 }
+
+// Equipment that can optionally be owned (non-standard home gym extras)
+export const OPTIONAL_EQUIPMENT: { id: string; label: string; dependsOn?: string }[] = [
+  { id: 'cable',  label: 'Cable machine' },
+  { id: 'rope',   label: 'Rope attachment', dependsOn: 'cable' },
+  { id: 'band',   label: 'Resistance bands' },
+]
 
 export interface PersonProgram extends RecordModel {
   person: string

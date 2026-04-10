@@ -11,6 +11,7 @@ export function useSequence() {
   const personProgram = ref<PersonProgram | null>(null)
   const sessions = ref<ProgramSession[]>([])
   const suggestedSession = ref<ProgramSession | null>(null)
+  const optionalSessions = ref<ProgramSession[]>([])
   const loading = shallowRef(false)
 
   async function load() {
@@ -18,7 +19,6 @@ export function useSequence() {
     loading.value = true
 
     try {
-      // Get active person_program
       const pps = await pb.collection('person_programs').getFullList<PersonProgram>({
         filter: `person = "${activePersonId.value}" && active = true`,
       })
@@ -26,23 +26,28 @@ export function useSequence() {
       if (pps.length === 0) {
         personProgram.value = null
         sessions.value = []
+        optionalSessions.value = []
         suggestedSession.value = null
         return
       }
 
       personProgram.value = pps[0]
 
-      // Get all sessions for this program
       const programSessions = await pb.collection('program_sessions').getFullList<ProgramSession>({
         filter: `program = "${personProgram.value.program}"`,
         sort: 'sequence_order',
       })
 
-      sessions.value = programSessions
+      // Split into scheduled (non-optional) and optional add-ons
+      const scheduled = programSessions.filter((s) => !s.is_optional)
+      const optional = programSessions.filter((s) => s.is_optional)
 
-      // Find suggested session based on cursor
+      sessions.value = scheduled
+      optionalSessions.value = optional
+
+      // Suggested session is always among scheduled sessions only
       const pos = personProgram.value.current_sequence_position || 1
-      suggestedSession.value = programSessions.find((s) => s.sequence_order === pos) || programSessions[0] || null
+      suggestedSession.value = scheduled.find((s) => s.sequence_order === pos) || scheduled[0] || null
     } catch (e) {
       console.error('Failed to load sequence:', e)
     } finally {
@@ -51,13 +56,16 @@ export function useSequence() {
   }
 
   async function advanceCursor(completedSession: ProgramSession) {
-    // May be called from a fresh instance (e.g. useWorkoutSession) — load if needed
     if (!personProgram.value) {
       await load()
     }
     if (!personProgram.value) return
 
-    const totalSessions = sessions.value.length
+    // Only cycle through non-optional sessions
+    const scheduled = sessions.value.filter((s) => !s.is_optional)
+    const totalSessions = scheduled.length
+    if (totalSessions === 0) return
+
     const currentPos = personProgram.value.current_sequence_position || 1
     const nextPos = (currentPos % totalSessions) + 1
 
@@ -76,5 +84,5 @@ export function useSequence() {
     load()
   })
 
-  return { personProgram, sessions, suggestedSession, loading, load, advanceCursor }
+  return { personProgram, sessions, optionalSessions, suggestedSession, loading, load, advanceCursor }
 }
