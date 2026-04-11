@@ -24,7 +24,7 @@ export async function getSuggestedWeight(
     const increment = poolEntry.progression_increment_lbs ||
       poolEntry.expand?.exercise?.default_increment_lbs || 5
 
-    const result = calculateProgression(lastSets, prevSets, poolEntry.rep_min, poolEntry.rep_max, increment)
+    const result = calculateProgression(lastSets, prevSets, increment)
     return { weight: result.suggestedWeight, reason: result.reason }
   } catch {
     return { weight: 0, reason: 'first_time' }
