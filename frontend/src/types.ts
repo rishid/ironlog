@@ -33,7 +33,33 @@ export interface ProgramSession extends RecordModel {
   session_type: 'strength' | 'cardio' | 'recovery' | 'mixed'
   target_duration_minutes: number
   target_exercise_count: number
-  is_optional: boolean
+  is_post_workout_conditioning: boolean
+}
+
+export type ConditioningFormat = 'emom' | 'amrap' | 'tabata'
+
+export interface ConditioningExercise {
+  id: string
+  name: string
+  repMin: number
+  repMax: number
+  notes: string
+}
+
+export interface ConditioningConfig {
+  format: ConditioningFormat
+  durationSeconds: number
+  exercises: ConditioningExercise[]
+  programSessionId: string
+}
+
+export interface ConditioningFormatOption {
+  format: ConditioningFormat
+  label: string
+  durationLabel: string
+  description: string
+  exercises: ConditioningExercise[]
+  config: ConditioningConfig
 }
 
 export interface ExercisePool extends RecordModel {

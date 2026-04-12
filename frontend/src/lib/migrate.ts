@@ -105,7 +105,7 @@ async function createCollections() {
         sel('session_type', ['strength', 'cardio', 'recovery', 'mixed'], true),
         { name: 'target_duration_minutes', type: 'number' },
         { name: 'target_exercise_count', type: 'number' },
-        { name: 'is_optional', type: 'bool' },
+        { name: 'is_post_workout_conditioning', type: 'bool' },
       ],
     },
     {
@@ -274,7 +274,7 @@ async function patchCollections() {
     { collection: 'exercise_pool',     field: { name: 'superset_group',      type: 'number' } },
     { collection: 'session_exercises', field: { name: 'superset_group',      type: 'number' } },
     { collection: 'exercise_pool',     field: { name: 'requires_equipment',  type: 'json'   } },
-    { collection: 'program_sessions',  field: { name: 'is_optional',         type: 'bool'   } },
+    { collection: 'program_sessions',  field: { name: 'is_post_workout_conditioning', type: 'bool' } },
   ]
   for (const { collection, field } of patches) {
     try {
@@ -399,7 +399,7 @@ async function seedProgram(
           session_type: sessionDef.session_type,
           target_duration_minutes: sessionDef.target_duration_minutes,
           target_exercise_count: sessionDef.target_exercise_count,
-          is_optional: sessionDef.is_optional ?? false,
+          is_post_workout_conditioning: sessionDef.is_post_workout_conditioning ?? false,
         })
         console.log(`  Created missing session ${sessionDef.sequence_order}: "${sessionDef.name}"`)
         sessionsUpdated++
@@ -412,14 +412,14 @@ async function seedProgram(
         existing.session_type !== sessionDef.session_type ||
         existing.target_duration_minutes !== sessionDef.target_duration_minutes ||
         existing.target_exercise_count !== sessionDef.target_exercise_count ||
-        !!existing.is_optional !== !!(sessionDef.is_optional ?? false)
+        !!existing.is_post_workout_conditioning !== !!(sessionDef.is_post_workout_conditioning ?? false)
       )) {
         await pb.collection('program_sessions').update(sessionRecord.id, {
           name: sessionDef.name,
           session_type: sessionDef.session_type,
           target_duration_minutes: sessionDef.target_duration_minutes,
           target_exercise_count: sessionDef.target_exercise_count,
-          is_optional: sessionDef.is_optional ?? false,
+          is_post_workout_conditioning: sessionDef.is_post_workout_conditioning ?? false,
         })
         console.log(`  Updated session ${sessionDef.sequence_order}: "${existing.name}" → "${sessionDef.name}"`)
         sessionsUpdated++
@@ -502,7 +502,7 @@ async function seedProgram(
       session_type: session.session_type,
       target_duration_minutes: session.target_duration_minutes,
       target_exercise_count: session.target_exercise_count,
-      is_optional: session.is_optional ?? false,
+      is_post_workout_conditioning: session.is_post_workout_conditioning ?? false,
     })
 
     for (const ex of session.exercises) {

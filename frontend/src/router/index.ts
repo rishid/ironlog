@@ -28,6 +28,11 @@ const router = createRouter({
       name: 'settings',
       component: () => import('../pages/Settings.vue'),
     },
+    {
+      path: '/conditioning',
+      name: 'conditioning',
+      component: () => import('../pages/Conditioning.vue'),
+    },
   ],
 })
 

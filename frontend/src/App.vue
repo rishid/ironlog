@@ -1,14 +1,39 @@
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, onUnmounted, computed } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { ref, shallowRef, onMounted, onUnmounted, computed, watch } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { usePersonStore } from './stores/person'
 import { useSessionStore } from './stores/session'
+import { useConditioningStore } from './stores/conditioning'
+import { loadConditioningOptions } from './lib/conditioningPicker'
+import { storeToRefs as storeRefs } from 'pinia'
 import PersonSelector from './components/PersonSelector.vue'
 import RestTimer from './components/RestTimer.vue'
+import ConditioningOffer from './components/ConditioningOffer.vue'
 
 const route = useRoute()
+const router = useRouter()
 const personStore = usePersonStore()
 const sessionStore = useSessionStore()
+const conditioningStore = useConditioningStore()
+const offerLoading = shallowRef(false)
+
+// When a conditioning session ID lands in the store, fetch the 3 format options
+watch(
+  () => conditioningStore.pendingProgramSessionId,
+  async (id) => {
+    if (!id) return
+    offerLoading.value = true
+    try {
+      const options = await loadConditioningOptions(id)
+      conditioningStore.setOfferOptions(options)
+    } catch (e) {
+      console.error('Failed to load conditioning options:', e)
+      conditioningStore.dismissOffer()
+    } finally {
+      offerLoading.value = false
+    }
+  },
+)
 
 
 const navItems = [
@@ -164,5 +189,14 @@ onUnmounted(() => { if (autoTimer) clearInterval(autoTimer) })
 
     <!-- Rendered at app shell level to avoid iOS fixed-position issues inside scroll containers -->
     <RestTimer />
+
+    <!-- Post-workout conditioning offer overlay -->
+    <ConditioningOffer
+      v-if="conditioningStore.showOffer || offerLoading"
+      :options="conditioningStore.offerOptions"
+      :loading="offerLoading"
+      @select="(config) => { conditioningStore.startConditioning(config); router.push('/conditioning') }"
+      @skip="conditioningStore.dismissOffer()"
+    />
   </div>
 </template>

@@ -39,8 +39,8 @@ export function useSequence() {
       })
 
       // Split into scheduled (non-optional) and optional add-ons
-      const scheduled = programSessions.filter((s) => !s.is_optional)
-      const optional = programSessions.filter((s) => s.is_optional)
+      const scheduled = programSessions.filter((s) => !s.is_post_workout_conditioning)
+      const optional = programSessions.filter((s) => s.is_post_workout_conditioning)
 
       sessions.value = scheduled
       optionalSessions.value = optional
@@ -62,7 +62,7 @@ export function useSequence() {
     if (!personProgram.value) return
 
     // Only cycle through non-optional sessions
-    const scheduled = sessions.value.filter((s) => !s.is_optional)
+    const scheduled = sessions.value.filter((s) => !s.is_post_workout_conditioning)
     const totalSessions = scheduled.length
     if (totalSessions === 0) return
 

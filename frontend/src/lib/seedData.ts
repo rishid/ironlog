@@ -171,10 +171,10 @@ export interface ProgramSessionSeed {
   session_type: 'strength' | 'cardio' | 'recovery' | 'mixed'
   target_duration_minutes: number
   target_exercise_count: number
-  // When true, this session can be appended to any strength day.
-  // The app should present it as "Add conditioning?" after the main session.
-  // It is NEVER auto-included — always opt-in per workout.
-  is_optional: boolean
+  // When true, this session is offered as an optional add-on after completing
+  // any strength workout — never auto-scheduled. The user chooses to start it
+  // or skip it. It is never part of the regular rotation.
+  is_post_workout_conditioning: boolean
   exercises: ExercisePoolSeed[]
 }
 
@@ -254,9 +254,11 @@ function finisher(exercise_name: string, opts: Partial<ExercisePoolSeed> = {}): 
 //   If the user hasn't enabled cable equipment, the app skips them and falls
 //   back to DB alternatives at lower priority.
 //
-// OPTIONAL CONDITIONING (Session 6):
-//   is_optional: true — app offers "Add conditioning?" after strength.
-//   Never auto-scheduled. Uses RPE 7-9/10, not heart rate (metoprolol).
+// POST-WORKOUT CONDITIONING (Session 6):
+//   is_post_workout_conditioning: true — app offers a conditioning finisher after
+//   completing any strength session. Never auto-scheduled. Intensity is based on
+//   perceived effort (7-9/10 feel), not heart rate (heart rate monitoring is
+//   unreliable on metoprolol, a beta blocker that artificially suppresses it).
 //
 export const rishiProgram: { name: string; notes: string; sessions: ProgramSessionSeed[] } = {
   name: 'Rishi PPL',
@@ -267,7 +269,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       name: 'Chest & Push',
       sequence_order: 1,
       session_type: 'strength',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 70,
       target_exercise_count: 11,
       exercises: [
@@ -307,7 +309,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       name: 'Zone 2 — Cardio',
       sequence_order: 2,
       session_type: 'cardio',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 50,
       target_exercise_count: 1,
       exercises: [
@@ -320,7 +322,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       name: 'Back & Biceps',
       sequence_order: 3,
       session_type: 'strength',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 65,
       target_exercise_count: 10,
       exercises: [
@@ -379,7 +381,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       name: 'Legs & Core',
       sequence_order: 4,
       session_type: 'strength',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 65,
       target_exercise_count: 9,
       exercises: [
@@ -436,7 +438,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       name: 'Zone 2 + Mobility',
       sequence_order: 5,
       session_type: 'recovery',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 60,
       target_exercise_count: 1,
       exercises: [
@@ -447,22 +449,32 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       ],
     },
     {
-      // ── OPTIONAL — CONDITIONING (EMOM / AMRAP — opt-in after any strength session) ──
+      // ── POST-WORKOUT CONDITIONING (opt-in finisher after any strength session) ──
       //
-      // Never auto-scheduled. App offers it after completing a strength session.
+      // Never auto-scheduled. After finishing a strength workout, the app asks
+      // "Want to add a conditioning finisher?" and lets you pick one of three formats:
       //
-      // Format options (app picks one per session):
-      //   EMOM 10: pick 5 exercises, alternate odd/even minutes
-      //   AMRAP 8: pick 3-4 exercises, cycle through for 8 min
-      //   Tabata: pick 2 exercises, 20s on/10s off × 8 rounds
+      //   Every Minute on the Minute (10 min):
+      //     4 exercises are picked from the pool. Each minute you do one exercise,
+      //     then rest for the remainder of that minute. Cycles through all 4 then repeats.
       //
-      // All RPE-based (7-9/10). Do NOT use heart rate on metoprolol.
-      // Primary metabolic value: EPOC (elevated post-exercise calorie burn
-      // for 12-24h) which helps offset metoprolol's suppressed RMR.
-      name: 'Conditioning — EMOM/AMRAP',
+      //   As Many Rounds As Possible (8 min):
+      //     3 exercises picked. A single 8-minute countdown runs. You cycle through
+      //     all 3 exercises back-to-back, as many times as you can, and log your rounds.
+      //
+      //   Tabata (4 min):
+      //     2 exercises picked. 8 rounds of 20 seconds hard work then 10 seconds rest.
+      //     Alternates between the two exercises each round.
+      //
+      // Why these formats: They create an "afterburn" effect (elevated metabolism for
+      // 12-24 hours post-workout) which is valuable because metoprolol (a beta blocker)
+      // slightly lowers resting metabolism. Intensity is judged by feel (7-9/10 effort),
+      // NOT heart rate — metoprolol artificially suppresses heart rate, making it an
+      // unreliable intensity measure.
+      name: 'Conditioning — Finisher',
       sequence_order: 6,
       session_type: 'mixed',
-      is_optional: true,
+      is_post_workout_conditioning: true,
       target_duration_minutes: 10,
       target_exercise_count: 4,
       exercises: [
@@ -496,7 +508,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Upper Body',
       sequence_order: 1,
       session_type: 'strength',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
@@ -516,7 +528,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Lower Body',
       sequence_order: 2,
       session_type: 'strength',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
@@ -534,7 +546,7 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       name: 'Full Body',
       sequence_order: 3,
       session_type: 'mixed',
-      is_optional: false,
+      is_post_workout_conditioning: false,
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [

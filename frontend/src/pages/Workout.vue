@@ -6,6 +6,7 @@ import { useSessionStore } from '../stores/session'
 import { storeToRefs } from 'pinia'
 import { useWorkoutSession } from '../composables/useSession'
 import { getRestSeconds } from '../composables/useProgression'
+import { useConditioningStore } from '../stores/conditioning'
 import ExerciseCard from '../components/ExerciseCard.vue'
 import SupersetCard from '../components/SupersetCard.vue'
 import FinisherBlock from '../components/FinisherBlock.vue'
@@ -21,6 +22,7 @@ const { activePersonId, activePerson } = storeToRefs(personStore)
 const { isActive, exercises, activeSession } = storeToRefs(sessionStore)
 
 const { generating, saving, prAlert, startSession, completeSet, swapExercise, finishSession, saveExerciseData } = useWorkoutSession()
+const conditioningStore = useConditioningStore()
 
 const programSession = ref<ProgramSession | null>(null)
 const elapsedTimer = shallowRef('')
@@ -251,20 +253,23 @@ async function onFinisherToggle(exerciseIndex: number, completed: boolean) {
   }
 }
 
-async function maybeOfferConditioning(completedSession: ProgramSession): Promise<string | null> {
-  // Only offer after strength sessions, and only if there's an optional conditioning session
-  if (completedSession.session_type !== 'strength') return null
-  try {
-    const optionals = await pb.collection('program_sessions').getFullList<ProgramSession>({
-      filter: `program = "${completedSession.program}" && is_optional = true`,
-    })
-    if (optionals.length === 0) return null
-    const conditioning = optionals[0]
-    if (confirm(`Add ${conditioning.target_duration_minutes}-min conditioning block (${conditioning.name})?`)) {
-      return conditioning.id
-    }
-  } catch { /* is_optional field not yet in DB — skip silently */ }
-  return null
+async function afterFinish(session: ProgramSession) {
+  if (timerInterval) clearInterval(timerInterval)
+  releaseWakeLock()
+
+  // Offer conditioning only after strength sessions
+  if (session.session_type === 'strength' || session.session_type === 'mixed') {
+    try {
+      const optionals = await pb.collection('program_sessions').getFullList<ProgramSession>({
+        filter: `program = "${session.program}" && is_post_workout_conditioning = true`,
+      })
+      if (optionals.length > 0) {
+        conditioningStore.setPending(optionals[0].id)
+      }
+    } catch { /* field not yet in DB — skip silently */ }
+  }
+
+  router.push('/')
 }
 
 async function autoFinish() {
@@ -273,10 +278,7 @@ async function autoFinish() {
   if (!confirm('All done! Finish this workout?')) return
   const session = programSession.value
   await finishSession(activePersonId.value, session)
-  if (timerInterval) clearInterval(timerInterval)
-  releaseWakeLock()
-  const conditioningId = await maybeOfferConditioning(session)
-  router.push(conditioningId ? `/workout?sessionId=${conditioningId}` : '/')
+  await afterFinish(session)
 }
 
 async function onFinish() {
@@ -284,10 +286,7 @@ async function onFinish() {
   if (!confirm('Finish this workout?')) return
   const session = programSession.value
   await finishSession(activePersonId.value, session)
-  if (timerInterval) clearInterval(timerInterval)
-  releaseWakeLock()
-  const conditioningId = await maybeOfferConditioning(session)
-  router.push(conditioningId ? `/workout?sessionId=${conditioningId}` : '/')
+  await afterFinish(session)
 }
 
 function formatElapsedAge(ms: number): string {
