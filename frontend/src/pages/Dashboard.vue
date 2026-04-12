@@ -152,6 +152,8 @@ function formatDateTime(dateStr: string): string {
   const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
   return `${dateStr2} at ${time}`
 }
+
+const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
 </script>
 
 <template>
@@ -303,6 +305,9 @@ function formatDateTime(dateStr: string): string {
         <p class="text-gray-400">No program configured yet.</p>
         <p class="text-sm text-gray-500 mt-1">Run the seed script to set up exercises and programs.</p>
       </div>
+
+      <!-- Build info -->
+      <p class="mt-8 text-center text-[10px] text-gray-700 select-none">{{ buildInfo }}</p>
     </template>
 
     <!-- Session Preview Modal -->
