@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'child_process'
 
 const gitHash = (() => {
+  if (process.env.VITE_GIT_HASH) return process.env.VITE_GIT_HASH
   try { return execSync('git rev-parse --short HEAD').toString().trim() } catch { return 'unknown' }
 })()
 const buildDate = new Date().toISOString().split('T')[0]

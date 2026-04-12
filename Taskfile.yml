@@ -117,7 +117,7 @@ tasks:
   docker:build:
     desc: Build Docker image
     cmds:
-      - docker build -t {{.IMAGE_NAME}} .
+      - docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) -t {{.IMAGE_NAME}} .
 
   docker:up:
     desc: Start containers

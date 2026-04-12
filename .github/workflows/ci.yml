@@ -50,6 +50,9 @@ jobs:
 
       # QEMU and multi-platform Buildx are not needed for amd64-only builds,
       # but setup-buildx-action is still required for cache and build features.
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -81,6 +84,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: GIT_HASH=${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
