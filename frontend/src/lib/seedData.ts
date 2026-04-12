@@ -90,6 +90,7 @@ export const exercises: ExerciseSeed[] = [
   { name: 'Band Pull-Apart',              muscle_groups: ['shoulders', 'back'],                  equipment: ['band'],                type: 'strength',    default_increment_lbs: 0,   notes: 'Arms straight at chest height, pull band apart to touch chest, squeeze rear delts 1s. Great warmup and posture corrector.', youtube_url: '' },
 
   // ── LEGS (quads / hamstrings / glutes / calves) ──────────────────────────
+  { name: 'DB Squat',                     muscle_groups: ['quads', 'glutes'],                    equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Weight in each hand at sides, torso tall, sit deep — cleanest bilateral squat, heaviest loading', youtube_url: '' },
   { name: 'DB Goblet Squat',              muscle_groups: ['quads', 'glutes'],                    equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Hold DB at chest, elbows track between knees, sit deep', youtube_url: '' },
   { name: 'DB Romanian Deadlift',         muscle_groups: ['hamstrings', 'glutes', 'back'],       equipment: ['dumbbells'],           type: 'strength',    default_increment_lbs: 5,   notes: 'Hinge at hips, slight knee bend, feel hamstring stretch — keep DBs close to legs', youtube_url: '' },
   { name: 'DB Deadlift',                  muscle_groups: ['hamstrings', 'glutes', 'back', 'quads'], equipment: ['dumbbells'],        type: 'strength',    default_increment_lbs: 5,   notes: 'Neutral spine, push floor away, drive hips forward at lockout', youtube_url: '' },
@@ -191,6 +192,8 @@ export interface ExercisePoolSeed {
   max_per_week: number
   sort_hint: number
   superset_group: number | null
+  crossover_group: string | null
+  crossover_count: number
   // Which equipment is required for this pool entry to be eligible.
   // If empty, always eligible. If set, the user must have that equipment
   // enabled in their profile for this exercise to appear.
@@ -215,6 +218,8 @@ function pool(
     max_per_week: 3,
     sort_hint: 0,
     superset_group: null,
+    crossover_group: null,
+    crossover_count: 0,
     requires_equipment: [],
     ...opts,
   }
@@ -226,6 +231,14 @@ function anchor(exercise_name: string, sort: number, opts: Partial<ExercisePoolS
 
 function finisher(exercise_name: string, opts: Partial<ExercisePoolSeed> = {}): ExercisePoolSeed {
   return pool(exercise_name, { is_finisher: true, sets_target: 1, rep_min: 1, rep_max: 1, ...opts })
+}
+
+let crossoverGroupCounter = 0
+
+function crossover_pool(exercises: ExercisePoolSeed[], opts: { count?: number } = {}): ExercisePoolSeed[] {
+  const groupId = `crossover_${crossoverGroupCounter++}`
+  const count = opts.count ?? 1
+  return exercises.map((ex) => ({ ...ex, crossover_group: groupId, crossover_count: count }))
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -293,12 +306,16 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         pool('Cable Lateral Raise',       { priority: 5, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable'] }),
 
         // ── CROSSOVER: biceps 2x (light — primary is Wed) ──
-        pool('DB Hammer Curl',            { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Bicep Curl',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('Cable Curl',                { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        ...crossover_pool([
+          pool('DB Hammer Curl',          { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+          pool('DB Bicep Curl',           { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+          pool('Cable Curl',              { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        ], { count: 1 }),
 
         // ── CROSSOVER: quads 2x (light — primary is Fri) ──
-        pool('DB Goblet Squat',           { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 75 }),
+        ...crossover_pool([
+          pool('DB Goblet Squat',         { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 75 }),
+        ], { count: 1 }),
 
         // Finisher
         finisher('Jump Rope — Singles', { rep_min: 200, rep_max: 200 }),
@@ -355,21 +372,23 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         pool('DB Spider Curl',           { priority: 2, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('Cable Curl',               { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
 
-        // ── CROSSOVER: shoulder pressing 2x (light — primary is Mon) ──
-        pool('DB Arnold Press',              { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
-        pool('DB Shoulder Press',            { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
-
-        // ── CROSSOVER: triceps 2x (cable pushdown preferred when available) ──
-        pool('Cable Tricep Pushdown',        { priority: 5, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
-        pool('DB Overhead Tricep Extension', { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Skull Crusher',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-
-        // ── CROSSOVER: calves 2x (primary is Fri) ──
-        pool('Standing Calf Raise',          { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45 }),
-
-        // ── CROSSOVER: hamstrings/glutes 2x (light — primary is Fri) ──
-        pool('DB Romanian Deadlift',         { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
-        pool('Cable Pull-Through',           { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75, requires_equipment: ['cable', 'rope'] }),
+        // ── CROSSOVER: shoulder pressing, triceps, calves, hamstrings/glutes (1 from each) ──
+        ...crossover_pool([
+          pool('DB Arnold Press',              { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+          pool('DB Shoulder Press',            { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+        ], { count: 1 }),
+        ...crossover_pool([
+          pool('Cable Tricep Pushdown',        { priority: 5, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
+          pool('DB Overhead Tricep Extension', { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+          pool('DB Skull Crusher',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        ], { count: 1 }),
+        ...crossover_pool([
+          pool('Standing Calf Raise',          { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45 }),
+        ], { count: 1 }),
+        ...crossover_pool([
+          pool('DB Romanian Deadlift',         { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75 }),
+          pool('Cable Pull-Through',           { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 75, requires_equipment: ['cable', 'rope'] }),
+        ], { count: 1 }),
 
         // Finishers — chest 2x + core 2x
         finisher('Push-Up',  { rep_min: 15, rep_max: 30 }),
@@ -386,8 +405,8 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_exercise_count: 9,
       exercises: [
         // Primary compound legs
-        anchor('DB Goblet Squat',       1, { sets_target: 4, rest_seconds: 90 }),
-        anchor('DB Romanian Deadlift',  2, { sets_target: 4, rest_seconds: 90 }),
+        anchor('DB Squat',       1, { sets_target: 3, rest_seconds: 90 }),
+        anchor('DB Romanian Deadlift',  2, { sets_target: 3, rest_seconds: 90 }),
         // Hip dominant
         pool('DB Hip Thrust',                    { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 90 }),
         pool('DB Single-Leg Romanian Deadlift',  { priority: 4, sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
@@ -408,22 +427,30 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         pool('Single-Leg Calf Raise', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 45 }),
 
         // ── CROSSOVER: back 2x (primary is Wed) ──
-        pool('Pull-Up',                   { priority: 4, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
-        pool('Chin-Up',                   { priority: 3, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
-        pool('Neutral Grip Pull-Up',      { priority: 3, sets_target: 3, rep_min: 5,  rep_max: 9,  rest_seconds: 120 }),
+        ...crossover_pool([
+          pool('Pull-Up',                 { priority: 4, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
+          pool('Chin-Up',                 { priority: 3, sets_target: 3, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
+          pool('Neutral Grip Pull-Up',    { priority: 3, sets_target: 3, rep_min: 5,  rep_max: 9,  rest_seconds: 120 }),
+        ], { count: 1 }),
 
         // ── CROSSOVER: biceps 2x ──
-        pool('DB Bicep Curl',             { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('DB Hammer Curl',            { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        ...crossover_pool([
+          pool('DB Bicep Curl',           { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+          pool('DB Hammer Curl',          { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        ], { count: 1 }),
 
         // ── CROSSOVER: rear delts 2x (primary is Wed) ──
-        pool('DB Rear Delt Fly',          { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
-        pool('Cable Face Pull',           { priority: 4, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
-        pool('Band Pull-Apart',           { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45, requires_equipment: ['band'] }),
+        ...crossover_pool([
+          pool('DB Rear Delt Fly',        { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
+          pool('Cable Face Pull',         { priority: 4, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable', 'rope'] }),
+          pool('Band Pull-Apart',         { priority: 3, sets_target: 3, rep_min: 15, rep_max: 20, rest_seconds: 45, requires_equipment: ['band'] }),
+        ], { count: 1 }),
 
         // ── CROSSOVER: obliques 2x (cable is uniquely good here) ──
-        pool('Cable Woodchop',            { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
-        pool('Cable Pallof Press',        { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        ...crossover_pool([
+          pool('Cable Woodchop',          { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+          pool('Cable Pallof Press',      { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        ], { count: 1 }),
 
         // Core at end
         pool('Plank',        { priority: 3, sets_target: 3, rep_min: 30, rep_max: 60, rest_seconds: 45 }),

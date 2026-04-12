@@ -113,7 +113,7 @@ const formatBadgeColors: Record<string, string> = {
           @click="emit('skip')"
           class="w-full py-3 text-sm text-gray-500 hover:text-gray-300 transition-colors min-h-[44px]"
         >
-          Maybe later
+          Skip
         </button>
       </div>
     </div>

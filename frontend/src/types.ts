@@ -76,6 +76,8 @@ export interface ExercisePool extends RecordModel {
   max_per_week: number
   sort_hint: number
   superset_group: number | null
+  crossover_group: string | null
+  crossover_count: number
   requires_equipment: string[]
 }
 
@@ -125,6 +127,8 @@ export interface SessionExercise extends RecordModel {
   sort_order: number
   sets_data: SetData[]
   superset_group: number | null
+  crossover_group: string | null
+  crossover_count: number
 }
 
 export interface WeightEntry extends RecordModel {

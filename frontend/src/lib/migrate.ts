@@ -117,6 +117,8 @@ async function createCollections() {
         { name: 'is_anchor', type: 'bool' },
         { name: 'is_finisher', type: 'bool' },
         { name: 'priority', type: 'number' },
+        { name: 'crossover_group', type: 'text' },
+        { name: 'crossover_count', type: 'number' },
         { name: 'sets_target', type: 'number' },
         { name: 'rep_min', type: 'number' },
         { name: 'rep_max', type: 'number' },
@@ -166,6 +168,8 @@ async function createCollections() {
         { name: 'sort_order', type: 'number' },
         { name: 'sets_data', type: 'json' },
         { name: 'superset_group', type: 'number' },
+        { name: 'crossover_group', type: 'text' },
+        { name: 'crossover_count', type: 'number' },
       ],
     },
     {
@@ -453,6 +457,8 @@ async function seedProgram(
           max_per_week: ex.max_per_week,
           sort_hint: ex.sort_hint,
           superset_group: ex.superset_group ?? null,
+          crossover_group: ex.crossover_group ?? null,
+          crossover_count: ex.crossover_count,
           requires_equipment: ex.requires_equipment ?? [],
         })
         exercisesAdded++
@@ -526,6 +532,8 @@ async function seedProgram(
         max_per_week: ex.max_per_week,
         sort_hint: ex.sort_hint,
         superset_group: ex.superset_group ?? null,
+        crossover_group: ex.crossover_group ?? null,
+        crossover_count: ex.crossover_count,
         requires_equipment: ex.requires_equipment ?? [],
       })
     }

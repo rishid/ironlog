@@ -54,29 +54,35 @@ export function useWorkoutSession() {
         program_session: programSession.id,
         date: new Date().toISOString(),
         completed: false,
-        template_snapshot: plan.map((p) => ({
+        template_snapshot: plan.filter((p) => p.isSelected).map((p) => ({
           exercise: p.poolEntry.exercise,
           exercise_name: p.poolEntry.expand?.exercise?.name,
-          isAnchor: p.isAnchor,
-          isFinisher: p.isFinisher,
+          isAnchor: p.role === 'anchor',
+          isFinisher: p.role === 'finisher',
         })),
       })
 
-      // 5. Create session_exercises with suggested weights
+      // 5. Create session_exercises for selected exercises only, preserving order
       const sessionExercises: SessionExercise[] = []
+      let sortOrder = 1
 
       for (const item of plan) {
+        // Skip unselected exercises
+        if (!item.isSelected) continue
+
         const { weight, reason } = await getSuggestedWeight(personId, item.poolEntry.exercise, item.poolEntry)
         const setsData = buildInitialSets(item.poolEntry, weight)
 
         const se = await pb.collection('session_exercises').create<SessionExercise>({
           session: workoutSession.id,
           exercise: item.poolEntry.exercise,
-          is_anchor: item.isAnchor,
-          is_finisher: item.isFinisher,
-          sort_order: item.sortOrder,
+          is_anchor: item.role === 'anchor',
+          is_finisher: item.role === 'finisher',
+          sort_order: sortOrder++,
           sets_data: setsData,
-          superset_group: item.supersetGroup ?? null,
+          superset_group: item.poolEntry.superset_group ?? null,
+          crossover_group: item.poolEntry.crossover_group ?? null,
+          crossover_count: item.poolEntry.crossover_count ?? 0,
         })
 
         // Attach exercise name for display

@@ -64,9 +64,16 @@ async function onPreview(session: ProgramSession) {
   }
 }
 
-const previewAnchors = computed(() => previewPool.value.filter(p => p.is_anchor && !p.is_finisher))
-const previewPool_ = computed(() => previewPool.value.filter(p => !p.is_anchor && !p.is_finisher))
-const previewFinishers = computed(() => previewPool.value.filter(p => p.is_finisher))
+function exerciseRole(p: ExercisePoolExpanded): 'anchor' | 'pool' | 'crossover' | 'finisher' {
+  if (p.is_anchor) return 'anchor'
+  if (p.is_finisher) return 'finisher'
+  if ((p as any).crossover_group) return 'crossover'
+  return 'pool'
+}
+
+const previewWithRoles = computed(() =>
+  previewPool.value.map(p => ({ ex: p, role: exerciseRole(p) }))
+)
 
 // Quick log modal
 const showQuickLog = shallowRef(false)
@@ -146,11 +153,11 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function formatDateTime(dateStr: string): string {
-  const d = new Date(dateStr)
-  const dateStr2 = formatDate(dateStr)
+function formatDateTime(isoDate: string): string {
+  const d = new Date(isoDate)
+  const label = formatDate(isoDate)
   const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  return `${dateStr2} at ${time}`
+  return `${label} at ${time}`
 }
 
 const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
@@ -328,38 +335,17 @@ const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
           <div class="overflow-y-auto p-5 space-y-4">
             <div v-if="loadingPreview" class="text-center py-8 text-gray-500 text-sm">Loading...</div>
             <template v-else>
-              <!-- Anchors -->
-              <div v-if="previewAnchors.length">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Always included</p>
-                <div class="space-y-1.5">
-                  <div v-for="p in previewAnchors" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
-                    <span class="text-sm font-medium">{{ p.expand?.exercise?.name }}</span>
-                    <span class="text-xs text-gray-500">{{ p.sets_target }}×{{ p.rep_min }}–{{ p.rep_max }}</span>
+              <!-- All exercises in seedData order with role badges -->
+              <div v-if="previewWithRoles.length" class="space-y-2">
+                <div v-for="item in previewWithRoles" :key="item.ex.id" class="flex items-center justify-between rounded-lg px-3 py-2 bg-surface-lighter/50 border border-gray-700/30">
+                  <div class="flex items-center gap-2 flex-1">
+                    <span v-if="item.role === 'anchor'" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/20 text-accent uppercase">Anchor</span>
+                    <span v-else-if="item.role === 'finisher'" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 uppercase">Finisher</span>
+                    <span v-else-if="item.role === 'crossover'" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 uppercase">Crossover</span>
+                    <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700/50 text-gray-300 uppercase">Pool</span>
+                    <span class="text-sm">{{ item.ex.expand?.exercise?.name }}</span>
                   </div>
-                </div>
-              </div>
-
-              <!-- Pool -->
-              <div v-if="previewPool_.length">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Random pick · {{ previewSession.target_exercise_count - previewAnchors.length - previewFinishers.length }} of {{ previewPool_.length }} selected
-                </p>
-                <div class="space-y-1.5">
-                  <div v-for="p in previewPool_" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
-                    <span class="text-sm text-gray-300">{{ p.expand?.exercise?.name }}</span>
-                    <span class="text-xs text-gray-500">{{ p.sets_target }}×{{ p.rep_min }}–{{ p.rep_max }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Finishers -->
-              <div v-if="previewFinishers.length">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Finishers</p>
-                <div class="space-y-1.5">
-                  <div v-for="p in previewFinishers" :key="p.id" class="flex items-center justify-between bg-surface-lighter rounded-lg px-3 py-2">
-                    <span class="text-sm text-gray-300">{{ p.expand?.exercise?.name }}</span>
-                    <span class="text-xs text-gray-500">{{ p.rep_min }}–{{ p.rep_max }}</span>
-                  </div>
+                  <span class="text-xs text-gray-500">{{ item.ex.sets_target }}×{{ item.ex.rep_min }}–{{ item.ex.rep_max }}</span>
                 </div>
               </div>
             </template>
