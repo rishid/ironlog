@@ -8,7 +8,7 @@ const gitHash = (() => {
   if (process.env.VITE_GIT_HASH) return process.env.VITE_GIT_HASH
   try { return execSync('git rev-parse --short HEAD').toString().trim() } catch { return 'unknown' }
 })()
-const buildDate = new Date().toISOString().split('T')[0]
+const buildDate = new Date().toISOString().replace('T', ' ').slice(0, 16)
 
 export default defineConfig({
   define: {

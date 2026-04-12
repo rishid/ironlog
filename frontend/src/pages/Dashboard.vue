@@ -307,7 +307,7 @@ const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
       </div>
 
       <!-- Build info -->
-      <p class="mt-8 text-center text-[10px] text-gray-700 select-none">{{ buildInfo }}</p>
+      <p class="mt-8 text-center text-[10px] text-gray-800 select-none">{{ buildInfo }}</p>
     </template>
 
     <!-- Session Preview Modal -->
