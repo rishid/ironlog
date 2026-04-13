@@ -437,7 +437,7 @@ async function seedProgram(
         await pb.collection('exercise_pool').delete(ep.id)
         exercisesRemoved++
       }
-      for (const ex of sessionDef.exercises) {
+      for (const [index, ex] of sessionDef.exercises.entries()) {
         const exerciseId = exerciseIdMap[ex.exercise_name]
         if (!exerciseId) {
           console.warn(`  Exercise not found: ${ex.exercise_name}`)
@@ -455,7 +455,7 @@ async function seedProgram(
           progression_increment_lbs: ex.progression_increment_lbs,
           rest_seconds: ex.rest_seconds,
           max_per_week: ex.max_per_week,
-          sort_hint: ex.sort_hint,
+          sort_hint: index,
           superset_group: ex.superset_group ?? null,
           crossover_group: ex.crossover_group ?? null,
           crossover_count: ex.crossover_count,
@@ -511,7 +511,7 @@ async function seedProgram(
       is_post_workout_conditioning: session.is_post_workout_conditioning ?? false,
     })
 
-    for (const ex of session.exercises) {
+    for (const [index, ex] of session.exercises.entries()) {
       const exerciseId = exerciseIdMap[ex.exercise_name]
       if (!exerciseId) {
         console.warn(`Exercise not found: ${ex.exercise_name}`)
@@ -530,7 +530,7 @@ async function seedProgram(
         progression_increment_lbs: ex.progression_increment_lbs,
         rest_seconds: ex.rest_seconds,
         max_per_week: ex.max_per_week,
-        sort_hint: ex.sort_hint,
+        sort_hint: index,
         superset_group: ex.superset_group ?? null,
         crossover_group: ex.crossover_group ?? null,
         crossover_count: ex.crossover_count,

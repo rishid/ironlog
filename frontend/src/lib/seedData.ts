@@ -190,7 +190,6 @@ export interface ExercisePoolSeed {
   progression_increment_lbs: number
   rest_seconds: number
   max_per_week: number
-  sort_hint: number
   superset_group: number | null
   crossover_group: string | null
   crossover_count: number
@@ -216,7 +215,6 @@ function pool(
     progression_increment_lbs: 0,
     rest_seconds: 0,
     max_per_week: 3,
-    sort_hint: 0,
     superset_group: null,
     crossover_group: null,
     crossover_count: 0,
@@ -225,8 +223,8 @@ function pool(
   }
 }
 
-function anchor(exercise_name: string, sort: number, opts: Partial<ExercisePoolSeed> = {}): ExercisePoolSeed {
-  return pool(exercise_name, { is_anchor: true, sort_hint: sort, priority: 5, ...opts })
+function anchor(exercise_name: string, opts: Partial<ExercisePoolSeed> = {}): ExercisePoolSeed {
+  return pool(exercise_name, { is_anchor: true, priority: 5, ...opts })
 }
 
 function finisher(exercise_name: string, opts: Partial<ExercisePoolSeed> = {}): ExercisePoolSeed {
@@ -287,27 +285,28 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_exercise_count: 11,
       exercises: [
         // Phase 1 — flat / incline press
-        anchor('Flat DB Press',        1, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        anchor('Incline DB Press',     2, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Flat DB Press',        { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Incline DB Press',     { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         // Phase 2 — chest isolation (cable upgrades DB fly when available)
-        anchor('DB Chest Fly',         3, { sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        anchor('DB Chest Fly',         { sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         pool('Cable Crossover',           { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
-        anchor('DB Pullover',          4, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        anchor('DB Pullover',          { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         // Phase 2 — pressing variety
-        anchor('DB Hex Press',         5, { sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        anchor('Single Arm DB Press',  6, { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
-        anchor('Low to High DB Fly',   7, { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        anchor('DB Hex Press',         { sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Single Arm DB Press',  { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('Low to High DB Fly',   { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         // Phase 3 — burnout superset
-        anchor('DB Floor Press', 8, { sets_target: 3, rep_min: 8, rep_max: 20, rest_seconds: 0,  superset_group: 1 }),
-        anchor('Push-Up',        9, { sets_target: 3, rep_min: 8, rep_max: 30, rest_seconds: 90, superset_group: 1 }),
+        anchor('DB Floor Press', { sets_target: 3, rep_min: 8, rep_max: 20, rest_seconds: 0,  superset_group: 1 }),
+        anchor('Push-Up',        { sets_target: 3, rep_min: 8, rep_max: 30, rest_seconds: 90, superset_group: 1 }),
 
         // ── CROSSOVER: lateral delt 2x ──
-        anchor('DB Lateral Raise', 10, { sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
+        anchor('DB Lateral Raise', { sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60 }),
         pool('Cable Lateral Raise',       { priority: 5, sets_target: 3, rep_min: 12, rep_max: 15, rest_seconds: 60, requires_equipment: ['cable'] }),
 
         // ── CROSSOVER: biceps 2x (light — primary is Wed) ──
         ...crossover_pool([
-          pool('DB Hammer Curl',          { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+          pool('DB Hammer Curl',
+               { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
           pool('DB Bicep Curl',           { priority: 3, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
           pool('Cable Curl',              { priority: 4, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
         ], { count: 1 }),
@@ -330,7 +329,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_duration_minutes: 50,
       target_exercise_count: 1,
       exercises: [
-        anchor('Bike — Zone 2',   1, { sets_target: 1, rep_min: 1, rep_max: 1, rest_seconds: 0 }),
+        anchor('Bike — Zone 2',   { sets_target: 1, rep_min: 1, rep_max: 1, rest_seconds: 0 }),
         pool('Row — Steady State',   { sets_target: 1, rep_min: 1, rep_max: 1, priority: 3, rest_seconds: 0 }),
       ],
     },
@@ -344,8 +343,8 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_exercise_count: 10,
       exercises: [
         // Primary pulls
-        anchor('Bent-Over DB Row', 1, { sets_target: 4, rest_seconds: 90 }),
-        anchor('Pull-Up',          2, { sets_target: 4, rep_min: 4, rep_max: 8, rest_seconds: 120 }),
+        anchor('Bent-Over DB Row', { sets_target: 4, rest_seconds: 90 }),
+        anchor('Pull-Up',          { sets_target: 4, rep_min: 4, rep_max: 8, rest_seconds: 120 }),
         // Pull-up bar variety
         pool('Chin-Up',                  { priority: 5, sets_target: 4, rep_min: 4,  rep_max: 8,  rest_seconds: 120 }),
         pool('Wide-Grip Pull-Up',        { priority: 4, sets_target: 4, rep_min: 3,  rep_max: 7,  rest_seconds: 120 }),
@@ -405,8 +404,8 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_exercise_count: 9,
       exercises: [
         // Primary compound legs
-        anchor('DB Squat',       1, { sets_target: 3, rest_seconds: 90 }),
-        anchor('DB Romanian Deadlift',  2, { sets_target: 3, rest_seconds: 90 }),
+        anchor('DB Squat',              { sets_target: 3, rest_seconds: 90 }),
+        anchor('DB Romanian Deadlift',  { sets_target: 3, rest_seconds: 90 }),
         // Hip dominant
         pool('DB Hip Thrust',                    { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 90 }),
         pool('DB Single-Leg Romanian Deadlift',  { priority: 4, sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
@@ -469,7 +468,7 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
       target_duration_minutes: 60,
       target_exercise_count: 1,
       exercises: [
-        anchor('Bike — Zone 2',   1, { sets_target: 1, rep_min: 1, rep_max: 1, rest_seconds: 0 }),
+        anchor('Bike — Zone 2',   { sets_target: 1, rep_min: 1, rep_max: 1, rest_seconds: 0 }),
         pool('Row — Steady State',   { sets_target: 1, rep_min: 1, rep_max: 1, priority: 3, rest_seconds: 0 }),
         finisher('Plank',      { rep_min: 45, rep_max: 90 }),
         finisher('Bird Dog',   { rep_min: 10, rep_max: 15 }),
@@ -539,8 +538,8 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
-        anchor('Flat DB Press', 1, { sets_target: 3, rep_min: 12, rep_max: 15 }),
-        anchor('Bent-Over DB Row', 2, { sets_target: 3, rep_min: 12, rep_max: 15 }),
+        anchor('Flat DB Press',    { sets_target: 3, rep_min: 12, rep_max: 15 }),
+        anchor('Bent-Over DB Row', { sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('DB Shoulder Press', { priority: 4, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('Incline DB Press', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('DB Lateral Raise', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
@@ -559,8 +558,8 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
-        anchor('DB Goblet Squat', 1, { sets_target: 3, rep_min: 12, rep_max: 15 }),
-        anchor('DB Romanian Deadlift', 2, { sets_target: 3, rep_min: 12, rep_max: 15 }),
+        anchor('DB Goblet Squat',      { sets_target: 3, rep_min: 12, rep_max: 15 }),
+        anchor('DB Romanian Deadlift', { sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('DB Walking Lunge', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('DB Reverse Lunge', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('DB Sumo Squat', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
@@ -577,8 +576,8 @@ export const sonaProgram: { name: string; notes: string; sessions: ProgramSessio
       target_duration_minutes: 45,
       target_exercise_count: 6,
       exercises: [
-        anchor('DB Thruster', 1, { sets_target: 3, rep_min: 10, rep_max: 12 }),
-        anchor('DB Clean and Press', 2, { sets_target: 3, rep_min: 10, rep_max: 12 }),
+        anchor('DB Thruster',        { sets_target: 3, rep_min: 10, rep_max: 12 }),
+        anchor('DB Clean and Press', { sets_target: 3, rep_min: 10, rep_max: 12 }),
         pool('DB Goblet Squat', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('Bent-Over DB Row', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),
         pool('Flat DB Press', { priority: 3, sets_target: 3, rep_min: 12, rep_max: 15 }),

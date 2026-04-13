@@ -67,7 +67,7 @@ async function onPreview(session: ProgramSession) {
 function exerciseRole(p: ExercisePoolExpanded): 'anchor' | 'pool' | 'crossover' | 'finisher' {
   if (p.is_anchor) return 'anchor'
   if (p.is_finisher) return 'finisher'
-  if ((p as any).crossover_group) return 'crossover'
+  if (p.crossover_group) return 'crossover'
   return 'pool'
 }
 
