@@ -288,11 +288,11 @@ export const rishiProgram: { name: string; notes: string; sessions: ProgramSessi
         anchor('Flat DB Press',        { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Incline DB Press',     { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         // Phase 2 — chest isolation (cable upgrades DB fly when available)
-        anchor('DB Chest Fly',         { sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
-        pool('Cable Crossover',           { priority: 5, sets_target: 4, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
+        anchor('DB Chest Fly',         { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
+        pool('Cable Crossover',           { priority: 5, sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60, requires_equipment: ['cable'] }),
         anchor('DB Pullover',          { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         // Phase 2 — pressing variety
-        anchor('DB Hex Press',         { sets_target: 4, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
+        anchor('DB Hex Press',         { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Single Arm DB Press',  { sets_target: 3, rep_min: 8,  rep_max: 10, rest_seconds: 90 }),
         anchor('Low to High DB Fly',   { sets_target: 3, rep_min: 10, rep_max: 12, rest_seconds: 60 }),
         // Phase 3 — burnout superset
