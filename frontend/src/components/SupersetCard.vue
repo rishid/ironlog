@@ -14,6 +14,7 @@ const emit = defineEmits<{
   updateSet: [exerciseIndex: number, setIndex: number, data: Partial<SetData>]
   completeSet: [exerciseIndex: number, setIndex: number]
   skipSet: [exerciseIndex: number, setIndex: number]
+  partialSet: [exerciseIndex: number, setIndex: number]
   addSet: [exerciseIndex: number]
 }>()
 
@@ -39,7 +40,7 @@ const completedRounds = computed(() => {
   for (let i = 0; i < totalRounds.value; i++) {
     if (props.exercises.every((ex) => {
       const s = ex.sets_data[i]
-      return s && (s.completed || s.skipped)
+      return s && (s.completed || s.skipped || !!s.partial)
     })) count++
   }
   return count
@@ -124,6 +125,7 @@ const exerciseFlow = computed(() =>
           @update-set="(idx, setIdx, data) => emit('updateSet', idx, setIdx, data)"
           @complete-set="(idx, setIdx) => emit('completeSet', idx, setIdx)"
           @skip-set="(idx, setIdx) => emit('skipSet', idx, setIdx)"
+          @partial-set="(idx, setIdx) => emit('partialSet', idx, setIdx)"
           @add-set="(idx) => emit('addSet', idx)"
         />
       </div>

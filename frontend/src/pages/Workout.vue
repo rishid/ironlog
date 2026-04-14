@@ -186,7 +186,7 @@ async function onCompleteSet(exerciseIndex: number, setIndex: number) {
 
   // Auto-collapse card if all sets are now done
   const updated = exercises.value[exerciseIndex]
-  if (updated?.sets_data.every(s => s.completed || s.skipped)) {
+  if (updated?.sets_data.every(s => s.completed || s.skipped || !!s.partial)) {
     setTimeout(() => collapseExercise(updated), 600)
   }
 }
@@ -216,12 +216,46 @@ function onSkipSet(exerciseIndex: number, setIndex: number) {
   for (let i = setIndex; i < exercise.sets_data.length; i++) {
     const s = exercise.sets_data[i]
     if (!s.completed) {
-      sessionStore.updateSetData(exerciseIndex, i, { skipped: true })
+      sessionStore.updateSetData(exerciseIndex, i, { skipped: true, partial: false })
     }
   }
 
   // Collapse the card
   collapseExercise(exercise)
+
+  saveExerciseData(exerciseIndex)
+}
+
+function onPartialSet(exerciseIndex: number, setIndex: number) {
+  const exercise = exercises.value[exerciseIndex]
+  if (!exercise) return
+  const set = exercise.sets_data[setIndex]
+  if (!set) return
+
+  if (set.partial) {
+    // Toggle off — revert to not-started
+    sessionStore.updateSetData(exerciseIndex, setIndex, { partial: false })
+    return
+  }
+
+  // Default reps_actual if user hasn't typed anything
+  if (!set.reps_actual) {
+    sessionStore.updateSetData(exerciseIndex, setIndex, {
+      reps_actual: Math.max(1, set.reps_target - 1),
+    })
+  }
+
+  sessionStore.updateSetData(exerciseIndex, setIndex, { partial: true })
+
+  // Rest timer — they physically attempted the set, rest is needed before next
+  const restSecs = getExerciseRestSeconds(exercise.exercise)
+  sessionStore.startRestTimer(restSecs)
+
+  // Auto-collapse only if all sets are now terminal
+  const updated = exercises.value[exerciseIndex]
+  if (updated?.sets_data.every(s => s.completed || s.skipped || !!s.partial)) {
+    setTimeout(() => collapseExercise(updated), 600)
+  }
 
   saveExerciseData(exerciseIndex)
 }
@@ -409,7 +443,7 @@ const totalExercises = computed(() => exercises.value.length)
 const completedExercises = computed(() =>
   exercises.value.filter(e => {
     const sets = e.sets_data
-    return sets.length > 0 && sets.every(s => s.completed || s.skipped)
+    return sets.length > 0 && sets.every(s => s.completed || s.skipped || !!s.partial)
   }).length
 )
 const progressPercent = computed(() => {
@@ -541,6 +575,7 @@ const warmupDismissed = shallowRef(false)
               @update-set="onUpdateSet"
               @complete-set="onCompleteSet"
               @skip-set="onSkipSet"
+              @partial-set="onPartialSet"
               @add-set="onAddSet"
               @swap="onSwap"
             />
@@ -554,6 +589,7 @@ const warmupDismissed = shallowRef(false)
               @update-set="onUpdateSet"
               @complete-set="onCompleteSet"
               @skip-set="onSkipSet"
+              @partial-set="onPartialSet"
               @add-set="onAddSet"
             />
           </template>

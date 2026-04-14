@@ -12,6 +12,7 @@ const emit = defineEmits<{
   update: [data: Partial<SetData>]
   complete: []
   skip: []
+  partial: []
 }>()
 </script>
 
@@ -23,7 +24,7 @@ const emit = defineEmits<{
     <!-- Set number -->
     <span
       class="text-xs font-bold w-6 text-center flex-shrink-0"
-      :class="set.completed ? 'text-success' : set.skipped ? 'text-gray-500' : 'text-accent'"
+      :class="set.completed ? 'text-success' : set.skipped ? 'text-gray-500' : set.partial ? 'text-amber-400' : 'text-accent'"
     >{{ setNumber }}</span>
 
     <!-- Weight or reps input -->
@@ -40,7 +41,9 @@ const emit = defineEmits<{
           ? 'border-success/40 text-success bg-success/5'
           : set.skipped
             ? 'border-gray-700 line-through text-gray-500'
-            : 'border-gray-700 focus:border-accent text-gray-100'
+            : set.partial
+              ? 'border-amber-500/40 text-amber-300 bg-amber-500/5'
+              : 'border-gray-700 focus:border-accent text-gray-100'
       ]"
       :disabled="set.completed || set.skipped || disabled"
       :placeholder="useRepInput ? 'reps' : 'lbs'"
@@ -51,7 +54,7 @@ const emit = defineEmits<{
     <!-- Complete toggle -->
     <button
       @click="emit('complete')"
-      :disabled="set.skipped || disabled"
+      :disabled="set.skipped || !!set.partial || disabled"
       class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
       :class="set.completed
         ? 'bg-success/20 text-success hover:bg-success/10'
@@ -63,10 +66,26 @@ const emit = defineEmits<{
       </svg>
     </button>
 
+    <!-- Partial toggle -->
+    <button
+      @click="emit('partial')"
+      :disabled="set.completed || set.skipped || disabled"
+      class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+      :class="set.partial
+        ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/10'
+        : 'bg-surface-light text-gray-600 hover:text-amber-400 hover:bg-amber-500/10'"
+      :title="set.partial ? 'Unmark partial' : 'Mark as partial (fewer reps than target)'"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M4 12c1.5-3 3-3 4.5 0s3 3 4.5 0 3-3 4.5 0" />
+      </svg>
+    </button>
+
     <!-- Skip button -->
     <button
       @click="emit('skip')"
-      :disabled="set.completed || disabled"
+      :disabled="set.completed || !!set.partial || disabled"
       class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
       :class="set.skipped
         ? 'bg-gray-500/20 text-gray-300 hover:bg-gray-500/10'

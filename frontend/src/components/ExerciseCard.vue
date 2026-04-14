@@ -15,6 +15,7 @@ const emit = defineEmits<{
   updateSet: [exerciseIndex: number, setIndex: number, data: Partial<SetData>]
   completeSet: [exerciseIndex: number, setIndex: number]
   skipSet: [exerciseIndex: number, setIndex: number]
+  partialSet: [exerciseIndex: number, setIndex: number]
   addSet: [exerciseIndex: number]
   swap: [exerciseIndex: number]
 }>()
@@ -48,7 +49,7 @@ const restLabel = computed(() => {
 })
 
 const completedCount = computed(() =>
-  props.exercise.sets_data.filter((s) => s.completed).length
+  props.exercise.sets_data.filter((s) => s.completed || !!s.partial).length
 )
 const activeCount = computed(() =>
   props.exercise.sets_data.filter((s) => !s.skipped).length
@@ -56,7 +57,7 @@ const activeCount = computed(() =>
 
 const allDone = computed(() => {
   const sets = props.exercise.sets_data
-  return sets.length > 0 && sets.every(s => s.completed || s.skipped)
+  return sets.length > 0 && sets.every(s => s.completed || s.skipped || !!s.partial)
 })
 
 const usesRepInput = computed(() => {
@@ -157,6 +158,7 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
         <span class="flex-1 text-center">{{ usesRepInput ? 'Reps / Count' : 'Weight (lbs)' }}</span>
         <span class="w-10"></span>
         <span class="w-10"></span>
+        <span class="w-10"></span>
       </div>
 
       <!-- Sets -->
@@ -170,6 +172,7 @@ function handleSetUpdate(setIndex: number, data: Partial<SetData>) {
           @update="(data) => handleSetUpdate(i, data)"
           @complete="emit('completeSet', exerciseIndex, i)"
           @skip="emit('skipSet', exerciseIndex, i)"
+          @partial="emit('partialSet', exerciseIndex, i)"
         />
       </div>
 

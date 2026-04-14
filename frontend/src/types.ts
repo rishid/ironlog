@@ -103,6 +103,7 @@ export interface SetData {
   reps_actual: number
   completed: boolean
   skipped: boolean
+  partial?: boolean
   type: 'normal' | 'warmup' | 'drop' | 'failure'
 }
 
