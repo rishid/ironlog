@@ -279,6 +279,10 @@ async function patchCollections() {
     { collection: 'session_exercises', field: { name: 'superset_group',      type: 'number' } },
     { collection: 'exercise_pool',     field: { name: 'requires_equipment',  type: 'json'   } },
     { collection: 'program_sessions',  field: { name: 'is_post_workout_conditioning', type: 'bool' } },
+    { collection: 'exercise_pool',     field: { name: 'crossover_group',     type: 'text'   } },
+    { collection: 'exercise_pool',     field: { name: 'crossover_count',     type: 'number' } },
+    { collection: 'session_exercises', field: { name: 'crossover_group',     type: 'text'   } },
+    { collection: 'session_exercises', field: { name: 'crossover_count',     type: 'number' } },
   ]
   for (const { collection, field } of patches) {
     try {
