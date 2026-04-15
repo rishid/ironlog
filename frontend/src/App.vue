@@ -53,6 +53,18 @@ const navIcons: Record<string, string> = {
 }
 
 const isWorkoutRoute = computed(() => route.path === '/workout')
+
+// Full-screen pages (fixed inset-0) manage their own layout — don't show the bottom nav
+const isFullScreenRoute = computed(() =>
+  ['/workout', '/conditioning', '/kickboxing'].includes(route.path)
+)
+
+const mobileNavItems = [
+  { name: 'Home',     path: '/',         icon: 'home' },
+  { name: 'History',  path: '/history',  icon: 'history' },
+  { name: 'Progress', path: '/progress', icon: 'trending' },
+  { name: 'Settings', path: '/settings', icon: 'settings' },
+]
 const workoutProgress = computed(() => {
   const total = sessionStore.exercises.length
   if (!total) return 0
@@ -182,13 +194,33 @@ onUnmounted(() => { if (autoTimer) clearInterval(autoTimer) })
       ></div>
     </div>
 
-    <!-- Main content -->
-    <main class="flex-1 pb-0 overflow-y-auto">
+    <!-- Main content — extra bottom padding on mobile so content clears the nav bar -->
+    <main class="flex-1 overflow-y-auto" :class="!isFullScreenRoute ? 'pb-20 lg:pb-0' : 'pb-0'">
       <RouterView />
     </main>
 
     <!-- Rendered at app shell level to avoid iOS fixed-position issues inside scroll containers -->
     <RestTimer />
+
+    <!-- Mobile bottom tab bar -->
+    <nav
+      v-if="!isFullScreenRoute"
+      class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-light border-t border-gray-700/30 flex"
+      style="padding-bottom: env(safe-area-inset-bottom)"
+    >
+      <router-link
+        v-for="item in mobileNavItems"
+        :key="item.path"
+        :to="item.path"
+        class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] transition-colors"
+        :class="route.path === item.path ? 'text-accent' : 'text-gray-500'"
+      >
+        <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" :d="navIcons[item.icon]" />
+        </svg>
+        <span class="text-[10px] font-medium tracking-wide">{{ item.name }}</span>
+      </router-link>
+    </nav>
 
     <!-- Post-workout conditioning offer overlay -->
     <ConditioningOffer

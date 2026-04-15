@@ -33,6 +33,11 @@ const router = createRouter({
       name: 'conditioning',
       component: () => import('../pages/Conditioning.vue'),
     },
+    {
+      path: '/kickboxing',
+      name: 'kickboxing',
+      component: () => import('../pages/KickboxingSession.vue'),
+    },
   ],
 })
 

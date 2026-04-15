@@ -188,6 +188,23 @@ const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
         @preview="onPreview"
       />
 
+      <!-- Other workouts (unsequenced — don't touch the rotation) -->
+      <div class="mt-4">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Other Workouts</p>
+        <div class="flex items-center bg-surface-lighter border border-gray-700/50 rounded-lg overflow-hidden">
+          <div class="flex-1 px-4 py-3">
+            <p class="text-sm font-medium">🥊 Kickboxing Circuit</p>
+            <p class="text-xs text-gray-500 mt-0.5">~30 min · guided timer · doesn't affect rotation</p>
+          </div>
+          <button
+            @click="router.push('/kickboxing')"
+            class="px-4 py-3 text-xs text-accent font-semibold hover:bg-surface-light transition-colors min-h-[44px] border-l border-gray-700/50"
+          >
+            Start
+          </button>
+        </div>
+      </div>
+
       <!-- Quick log button -->
       <button
         @click="showQuickLog = true"
@@ -290,7 +307,7 @@ const buildInfo = `${__BUILD_DATE__} · ${__GIT_HASH__}`
           <div class="flex items-center justify-between">
             <div>
               <h3 class="font-semibold">
-                {{ (lastSession as any).expand?.program_session?.name || 'Workout' }}
+                {{ (lastSession as any).expand?.program_session?.name || lastSession.template_snapshot?.freeform_label || 'Workout' }}
               </h3>
               <p class="text-sm text-gray-400">
                 {{ formatDateTime(lastSession.date) }}
