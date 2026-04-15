@@ -66,8 +66,12 @@ export function useSequence() {
     const totalSessions = scheduled.length
     if (totalSessions === 0) return
 
-    const currentPos = personProgram.value.current_sequence_position || 1
-    const nextPos = (currentPos % totalSessions) + 1
+    // Advance from the completed session's position (not the cursor's current position).
+    // This way, if the user picks a different session than suggested, the sequence still
+    // advances from what was actually completed — avoiding a wrap-around back to the
+    // same session.
+    const completedPos = completedSession.sequence_order
+    const nextPos = (completedPos % totalSessions) + 1
 
     const skipped = suggestedSession.value?.id !== completedSession.id
 
