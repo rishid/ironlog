@@ -8,10 +8,10 @@ name: CI
 
 on:
   push:
-    branches: [master]
-    tags: ["v*"]
+    branches: [ master ]
+    tags: [ "v*" ]
   pull_request:
-    branches: [master]
+    branches: [ master ]
 
 env:
   REGISTRY: ghcr.io
@@ -90,8 +90,9 @@ jobs:
 
       - name: Trigger home-ops deploy
         if: github.event_name != 'pull_request'
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.HOME_OPS }}
           repository: rishid/home-ops
-          event-type: ironlog-deploy
+          event-type: app-deploy
+          client-payload: "{\"app\": \"ironlog\"}"
