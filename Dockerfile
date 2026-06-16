@@ -12,7 +12,7 @@ RUN npm run build
 RUN npx esbuild src/lib/migrate.ts --bundle --platform=node --format=esm --outfile=seed.mjs
 
 # Stage 2: PocketBase with built frontend + self-contained seeding
-FROM alpine:3.24@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4 AS production
+FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS production
 ARG PB_VERSION=0.36.8
 ARG TARGETARCH
 
