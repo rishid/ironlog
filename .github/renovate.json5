@@ -18,6 +18,10 @@
   rebaseWhen: "conflicted",
   prHourlyLimit: 10,
   prConcurrentLimit: 20,
+  // npm 12 defaults allow-remote=none, which rejects the bundled
+  // @tailwindcss/oxide-wasm32-wasi tarball and breaks lockfile updates.
+  // Scoped to Renovate's artifact updates only; CI and local installs are unaffected.
+  npmrc: "allow-remote=all",
   "github-actions": {
     enabled: true,
     automerge: true,
@@ -38,6 +42,11 @@
       matchUpdateTypes: ["minor", "patch"],
       groupName: "all non-major dependencies",
       groupSlug: "all-minor-patch",
+    },
+    {
+      description: "Hold TypeScript below 7 until vue-tsc supports the native compiler",
+      matchPackageNames: ["typescript"],
+      allowedVersions: "<7",
     },
     {
       description: "Enable auto-merge for Docker digest updates",
