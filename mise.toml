@@ -1,4 +1,4 @@
 [tools]
-node = "25"
+node = "26"
 task = "latest"
 cloudflared = "latest"
