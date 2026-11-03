@@ -1,4 +1,3 @@
 [tools]
 node = "26"
 task = "latest"
-cloudflared = "latest"
