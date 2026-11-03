@@ -1,5 +1,5 @@
 # Stage 1: Build Vue frontend + bundle seed script
-FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS frontend-build
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS frontend-build
 ARG GIT_HASH=unknown
 ENV VITE_GIT_HASH=$GIT_HASH
 WORKDIR /app
@@ -12,7 +12,7 @@ RUN npm run build
 RUN npx esbuild src/lib/migrate.ts --bundle --platform=node --format=esm --outfile=seed.mjs
 
 # Stage 2: PocketBase with built frontend + self-contained seeding
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS production
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS production
 ARG PB_VERSION=0.36.8
 ARG TARGETARCH
 
